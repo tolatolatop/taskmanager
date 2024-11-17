@@ -2,8 +2,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { Menu } from 'antd';
 import { 
   UnorderedListOutlined, 
-  PlusOutlined, 
-  SearchOutlined 
+  PlusOutlined
 } from '@ant-design/icons';
 
 function Navbar() {
@@ -19,12 +18,7 @@ function Navbar() {
       key: '/create',
       icon: <PlusOutlined />,
       label: <Link to="/create">创建任务</Link>,
-    },
-    {
-      key: '/search',
-      icon: <SearchOutlined />,
-      label: <Link to="/search">搜索任务</Link>,
-    },
+    }
   ];
 
   return (

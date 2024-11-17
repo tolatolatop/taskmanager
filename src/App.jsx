@@ -6,7 +6,6 @@ import { useTaskManager } from './hooks/useTaskManager';
 import TaskList from './components/TaskList';
 import TaskDetail from './components/TaskDetail';
 import CreateTask from './components/CreateTask';
-import SearchTasks from './components/SearchTasks';
 import Navbar from './components/Navbar';
 import './styles/main.css';
 
@@ -26,7 +25,6 @@ function App() {
                 <Route path="/" element={<TaskList />} />
                 <Route path="/task/:id" element={<TaskDetail />} />
                 <Route path="/create" element={<CreateTask />} />
-                <Route path="/search" element={<SearchTasks />} />
               </Routes>
             </div>
           </div>
