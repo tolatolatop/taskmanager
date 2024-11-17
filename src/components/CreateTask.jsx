@@ -1,24 +1,8 @@
-import { useContext, useEffect, useState } from 'react';
+import { useContext, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { TaskContext } from '../App';
-import { 
-  Form, 
-  Input, 
-  Card, 
-  Button, 
-  Select, 
-  Space, 
-  Alert, 
-  message,
-  Checkbox,
-  Row,
-  Col,
-  Tag,
-  Divider,
-  Radio
-} from 'antd';
+import { Form, Input, Card, Button, Select, Alert, message } from 'antd';
 import { TaskAPI, TaskModel } from '../services/taskService';
-import { INSTANCE_STATUS } from '../services/mockService';
 import InstanceSelector from './InstanceSelector';
 
 const { TextArea } = Input;
@@ -28,91 +12,16 @@ function CreateTask() {
   const navigate = useNavigate();
   const { addTask } = useContext(TaskContext);
   const [form] = Form.useForm();
-  const [instances, setInstances] = useState([]);
   const [taskType, setTaskType] = useState(TaskModel.TYPE.NORMAL);
   const [loading, setLoading] = useState(false);
-  const [selectedRegion, setSelectedRegion] = useState('all');
-  const [selectedSpec, setSelectedSpec] = useState('all');
-  const [selectedCpuType, setSelectedCpuType] = useState('all');
-  const [selectedInstances, setSelectedInstances] = useState([]);
-
-  useEffect(() => {
-    const fetchInstances = async () => {
-      try {
-        const data = await TaskAPI.getInstances();
-        console.log('获取到的实例列表:', data);
-        setInstances(data);
-      } catch (error) {
-        console.error('获取实例列表失败:', error);
-      }
-    };
-    fetchInstances();
-  }, []);
-
-  // 获取所有可用的选项
-  const regions = ['all', ...new Set(instances.map(instance => instance.region))];
-  const specifications = ['all', ...new Set(instances.map(instance => instance.specification))];
-  const cpuTypes = ['all', ...new Set(instances.map(instance => instance.cpuType))];
-
-  // 计算每个分组的选择状态
-  const getGroupCheckStatus = (type, value) => {
-    if (value === 'all') return;
-    const groupInstances = instances.filter(instance => 
-      instance[type] === value && 
-      instance.status !== INSTANCE_STATUS.STOPPED
-    );
-    const selectedCount = groupInstances.filter(instance => 
-      selectedInstances.includes(instance.id)
-    ).length;
-
-    if (selectedCount === 0) return 'none';
-    if (selectedCount === groupInstances.length) return 'all';
-    return 'partial';
-  };
-
-  // 处理单个实例选择
-  const handleInstanceSelect = (instanceId) => {
-    console.log('单个实例选择/取消:', instanceId);
-    const instance = instances.find(i => i.id === instanceId);
-    if (instance && instance.status !== INSTANCE_STATUS.STOPPED) {
-      setSelectedInstances(prev => {
-        const newSelection = prev.includes(instanceId)
-          ? prev.filter(id => id !== instanceId)
-          : [...prev, instanceId];
-        console.log('更新后的选中实例:', newSelection);
-        form.setFieldValue('instances', newSelection);
-        return newSelection;
-      });
-    }
-  };
-
-  // 过滤实例
-  const filteredInstances = instances.filter(instance => 
-    (selectedRegion === 'all' || instance.region === selectedRegion) &&
-    (selectedSpec === 'all' || instance.specification === selectedSpec) &&
-    (selectedCpuType === 'all' || instance.cpuType === selectedCpuType)
-  );
-
-  // 获取实例状态的标签颜色
-  const getStatusColor = (status) => {
-    switch(status) {
-      case INSTANCE_STATUS.RUNNING:
-        return 'success';
-      case INSTANCE_STATUS.MAINTENANCE:
-        return 'warning';
-      case INSTANCE_STATUS.STOPPED:
-        return 'error';
-      default:
-        return 'default';
-    }
-  };
 
   const handleSubmit = async (values) => {
     setLoading(true);
     try {
-      const selectedInstancesData = instances.filter(instance => 
-        values.instances?.includes(instance.id)
-      );
+      const selectedInstancesData = await TaskAPI.getInstances()
+        .then(instances => instances.filter(instance => 
+          values.instances?.includes(instance.id)
+        ));
       
       const newTask = {
         ...values,
@@ -150,31 +59,6 @@ function CreateTask() {
       console.log('清除实例选择');
       form.setFieldValue('instances', undefined);
     }
-  };
-
-  // 处理分组选择
-  const handleGroupSelect = (type, value, checked) => {
-    console.log(`分组选择 - 类型: ${type}, 值: ${value}, 选中: ${checked}`);
-    const groupInstances = instances.filter(instance => 
-      instance[type] === value && 
-      instance.status !== INSTANCE_STATUS.STOPPED
-    );
-    const groupInstanceIds = groupInstances.map(instance => instance.id);
-    
-    console.log('该分组可用实例:', groupInstances);
-    console.log('该分组实例IDs:', groupInstanceIds);
-
-    setSelectedInstances(prev => {
-      let newSelection;
-      if (checked) {
-        newSelection = [...new Set([...prev, ...groupInstanceIds])];
-      } else {
-        newSelection = prev.filter(id => !groupInstanceIds.includes(id));
-      }
-      console.log('更新后的选中实例:', newSelection);
-      form.setFieldValue('instances', newSelection);
-      return newSelection;
-    });
   };
 
   return (
