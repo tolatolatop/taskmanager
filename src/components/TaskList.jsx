@@ -1,7 +1,7 @@
-import { useContext } from 'react';
+import { useContext, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { TaskContext } from '../App';
-import { Card, Tag, Space, Row, Col } from 'antd';
+import { Card, Tag, Space, Row, Col, Spin } from 'antd';
 import { 
   ClockCircleOutlined, 
   CheckCircleOutlined, 
@@ -9,7 +9,12 @@ import {
 } from '@ant-design/icons';
 
 function TaskList() {
-  const { tasks } = useContext(TaskContext);
+  const { tasks, loading, fetchTasks } = useContext(TaskContext);
+
+  useEffect(() => {
+    console.log('TaskList: 开始获取任务列表');
+    fetchTasks();
+  }, [fetchTasks]);
 
   const getStatusIcon = (status) => {
     switch(status) {
@@ -36,6 +41,14 @@ function TaskList() {
         return 'default';
     }
   };
+
+  if (loading) {
+    return (
+      <div style={{ textAlign: 'center', padding: '50px' }}>
+        <Spin size="large" tip="加载中..." />
+      </div>
+    );
+  }
 
   return (
     <div className="task-list">
