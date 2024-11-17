@@ -3,220 +3,259 @@
 
 基础信息
 -------
-:基础URL: http://localhost:3000/api
-:数据格式: 所有请求和响应均使用 JSON 格式
-:时间格式: ISO 8601 标准 (YYYY-MM-DD HH:mm:ss)
-
-认证
----
-暂无认证要求
-
-错误处理
--------
-所有失败的请求都会返回对应的 HTTP 状态码和错误信息::
-
-    {
-        "error": "错误描述信息"
-    }
-
-API 端点
--------
+- 基础URL: http://localhost:3000/api
+- 所有请求和响应均使用 JSON 格式
+- 认证方式: Bearer Token (待实现)
 
 任务相关接口
-^^^^^^^^^^
+----------
 
 获取任务列表
-~~~~~~~~~~
-:URL: /tasks
-:方法: GET
-:参数: 无
-:响应: ::
+^^^^^^^^^^
+GET /tasks
+
+**响应示例**::
 
     [
         {
             "id": 1,
-            "title": "任务标题",
-            "description": "任务描述",
-            "type": "normal|deploy",
-            "status": "待处理|进行中|已完成|失败",
-            "progress": 0,
-            "createdAt": "2024-03-20 10:00:00",
-            "completedAt": null,
-            "instances": []  // 仅部署任务包含此字段
+            "title": "开发用户认证功能",
+            "description": "实现用户登录、注册和权限控制功能",
+            "type": "normal",
+            "status": "进行中",
+            "progress": 60,
+            "createdAt": "2024-03-15 10:00:00",
+            "completedAt": null
         }
     ]
 
 获取单个任务
-~~~~~~~~~~
-:URL: /tasks/:id
-:方法: GET
-:参数: id (任务ID)
-:响应: ::
+^^^^^^^^^^
+GET /tasks/:id
+
+**响应示例**::
+
+    {
+        "id": 1,
+        "title": "开发用户认证功能",
+        "description": "实现用户登录、注册和权限控制功能",
+        "type": "normal",
+        "status": "进行中",
+        "progress": 60,
+        "createdAt": "2024-03-15 10:00:00",
+        "completedAt": null,
+        "instances": []
+    }
+
+创建任务
+^^^^^^^
+POST /tasks
+
+**请求参数**::
+
+    {
+        "title": "任务标题",
+        "description": "任务描述",
+        "type": "normal|deploy",
+        "instances": []  // 部署任务必填
+    }
+
+**响应示例**::
 
     {
         "id": 1,
         "title": "任务标题",
         "description": "任务描述",
-        "type": "normal|deploy",
-        "status": "待处理|进行中|已完成|失败",
+        "type": "normal",
+        "status": "待处理",
         "progress": 0,
         "createdAt": "2024-03-20 10:00:00",
-        "completedAt": null,
-        "instances": [],
-        "logs": [
-            {
-                "timestamp": "2024-03-20 10:00:00",
-                "message": "[INFO] 日志内容"
-            }
-        ]
+        "completedAt": null
     }
-
-创建任务
-~~~~~~~
-:URL: /tasks
-:方法: POST
-:请求体: ::
-
-    {
-        "title": "任务标题",
-        "description": "任务描述",
-        "type": "normal|deploy",
-        "instances": [1, 2]  // 仅部署任务需要此字段
-    }
-
-:响应: 返回创建的任务完整信息
 
 更新任务
-~~~~~~~
-:URL: /tasks/:id
-:方法: PUT
-:参数: id (任务ID)
-:请求体: ::
+^^^^^^^
+PUT /tasks/:id
+
+**请求参数**::
 
     {
-        "title": "任务标题",
-        "description": "任务描述",
-        "status": "待处理|进行中|已完成|失败",
-        "progress": 50
+        "title": "更新的标题",
+        "description": "更新的描述",
+        "status": "进行中",
+        "progress": 50,
+        "type": "normal|deploy",
+        "instances": []  // 部署任务必填
     }
 
-:响应: 返回更新后的任务完整信息
+**响应示例**::
+
+    {
+        "id": 1,
+        "title": "更新的标题",
+        "description": "更新的描述",
+        "status": "进行中",
+        "progress": 50,
+        "type": "normal",
+        "instances": [],
+        "createdAt": "2024-03-20 10:00:00",
+        "completedAt": null
+    }
 
 删除任务
-~~~~~~~
-:URL: /tasks/:id
-:方法: DELETE
-:参数: id (任务ID)
-:响应: ::
+^^^^^^^
+DELETE /tasks/:id
 
-    {
-        "success": true
-    }
+**响应**::
+
+    204 No Content
 
 搜索任务
-~~~~~~~
-:URL: /tasks/search
-:方法: GET
-:查询参数: q (搜索关键词)
-:响应: 返回匹配的任务列表
+^^^^^^^
+GET /tasks/search?q=关键词
 
-实例相关接口
-^^^^^^^^^^
-
-获取实例列表
-~~~~~~~~~~
-:URL: /instances
-:方法: GET
-:响应: ::
+**响应示例**::
 
     [
         {
             "id": 1,
-            "name": "实例名称",
-            "ip": "192.168.1.1",
+            "title": "包含关键词的任务",
+            "description": "任务描述",
+            "type": "normal",
+            "status": "进行中",
+            "progress": 50
+        }
+    ]
+
+任务日志接口
+----------
+
+获取任务日志
+^^^^^^^^^^
+GET /tasks/:id/logs
+
+**响应示例**::
+
+    [
+        {
+            "timestamp": "2024-03-20T10:00:00.000Z",
+            "message": "[INFO] Task-1 - 任务已创建: 开发用户认证功能"
+        },
+        {
+            "timestamp": "2024-03-20T10:01:00.000Z",
+            "message": "[INFO] Task-1 - 任务正在运行中，当前进度: 30%"
+        },
+        {
+            "timestamp": "2024-03-20T10:02:00.000Z",
+            "message": "[DEBUG] Task-1 - 系统状态正常 (内存: 45%, CPU: 30%)"
+        }
+    ]
+
+**日志格式说明**:
+
+- timestamp: ISO 8601 格式的时间戳
+- message: 日志消息，格式为 "[日志级别] Task-任务ID - 具体消息"
+- 日志级别包括: INFO, DEBUG, WARN, ERROR
+
+实例相关接口
+----------
+
+获取实例列表
+^^^^^^^^^^
+GET /instances
+
+**响应示例**::
+
+    [
+        {
+            "id": 1,
+            "name": "生产环境-1",
+            "ip": "192.168.1.101",
             "region": "华东-上海",
-            "status": "running|stopped|maintenance",
+            "status": "running",
             "specification": "8C16G",
-            "cpuType": "Intel Xeon",
-            "lastHeartbeat": "2024-03-20 10:00:00"
+            "cpuType": "Intel Xeon Platinum 8269CY",
+            "lastHeartbeat": "2024-03-20 10:30:00"
         }
     ]
 
 获取实例详情
-~~~~~~~~~~
-:URL: /instances/:id
-:方法: GET
-:参数: id (实例ID)
-:响应: 返回单个实例的完整信息
+^^^^^^^^^^
+GET /instances/:id
 
-获取实例状态
-~~~~~~~~~~
-:URL: /instances/:id/status
-:方法: GET
-:参数: id (实例ID)
-:响应: ::
+**响应示例**::
 
     {
-        "status": "running|stopped|maintenance",
-        "lastHeartbeat": "2024-03-20 10:00:00"
+        "id": 1,
+        "name": "生产环境-1",
+        "ip": "192.168.1.101",
+        "region": "华东-上海",
+        "status": "running",
+        "specification": "8C16G",
+        "cpuType": "Intel Xeon Platinum 8269CY",
+        "lastHeartbeat": "2024-03-20 10:30:00"
+    }
+
+获取实例状态
+^^^^^^^^^^
+GET /instances/:id/status
+
+**响应示例**::
+
+    {
+        "status": "running",
+        "lastHeartbeat": "2024-03-20 10:30:00"
     }
 
 数据模型
 -------
 
-任务 (Task)
-^^^^^^^^^
-============  ========  ================================
-字段          类型      描述
-============  ========  ================================
-id            number    任务ID
-title         string    任务标题
-description   string    任务描述
-type          string    任务类型: normal/deploy
-status        string    任务状态: 待处理/进行中/已完成/失败
-progress      number    任务进度(0-100)
-createdAt     string    创建时间
-completedAt   string    完成时间
-instances     array     部署实例列表(仅部署任务)
-logs          array     任务日志列表
-============  ========  ================================
+任务状态枚举::
 
-实例 (Instance)
-^^^^^^^^^^^^
-===============  ========  ================================
-字段             类型      描述
-===============  ========  ================================
-id               number    实例ID
-name             string    实例名称
-ip               string    IP地址
-region           string    地区
-status           string    状态: running/stopped/maintenance
-specification    string    规格(如: 8C16G)
-cpuType          string    CPU类型
-lastHeartbeat    string    最后心跳时间
-===============  ========  ================================
+    {
+        "PENDING": "待处理",
+        "IN_PROGRESS": "进行中",
+        "COMPLETED": "已完成",
+        "FAILED": "失败"
+    }
 
-日志 (Log)
-^^^^^^^^
-===========  ========  ===========
-字段         类型      描述
-===========  ========  ===========
-timestamp    string    日志时间
-message      string    日志内容
-===========  ========  ===========
+任务类型枚举::
+
+    {
+        "NORMAL": "normal",
+        "DEPLOY": "deploy"
+    }
+
+实例状态枚举::
+
+    {
+        "RUNNING": "running",
+        "STOPPED": "stopped",
+        "MAINTENANCE": "maintenance"
+    }
 
 状态码说明
 --------
-- 200: 成功
+- 200: 请求成功
 - 201: 创建成功
+- 204: 删除成功
 - 400: 请求参数错误
+- 401: 未认证
+- 403: 无权限
 - 404: 资源不存在
-- 500: 服务器内部错误
+- 500: 服务器错误
 
-注意事项
--------
-1. 部署任务必须选择至少一个实例
-2. 已停止的实例不能被选择用于部署
-3. 任务进度更新可能会触发状态变更
-4. 日志最多返回最近100条记录
-5. 所有时间戳都使用服务器时区 
+Mock 模式说明
+-----------
+系统支持 Mock 模式，通过环境变量 REACT_APP_USE_MOCK 控制::
+
+    REACT_APP_USE_MOCK=true  # 使用模拟数据
+    REACT_APP_USE_MOCK=false # 使用真实 API
+
+在 Mock 模式下：
+- 所有数据都是模拟的，不会真正调用后端 API
+- 支持基本的 CRUD 操作
+- 任务日志会自动生成并更新
+- 实例状态会随机变化
+- 支持任务状态和进度的实时更新
+- 支持日志的实时刷新和过滤
