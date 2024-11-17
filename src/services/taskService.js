@@ -2,7 +2,7 @@ import { message } from 'antd';
 import { MockTaskAPI } from './mockService';
 
 // 是否使用模拟数据（可以通过环境变量控制）
-const USE_MOCK = process.env.REACT_APP_USE_MOCK === 'true' || true;
+const USE_MOCK = process.env.REACT_APP_USE_MOCK === 'true' || false;
 
 // 在启动时打印当前模式
 console.log('当前API模式:', USE_MOCK ? 'Mock模式' : '真实API模式');
