@@ -19,6 +19,7 @@ import {
 } from 'antd';
 import { TaskAPI, TaskModel } from '../services/taskService';
 import { INSTANCE_STATUS } from '../services/mockService';
+import InstanceSelector from './InstanceSelector';
 
 const { TextArea } = Input;
 const { Option } = Select;
@@ -213,120 +214,7 @@ function CreateTask() {
                 label="部署实例"
                 rules={[{ required: true, message: '请选择至少一个部署实例', type: 'array', min: 1 }]}
               >
-                <div className="instance-selector">
-                  <Space direction="vertical" style={{ width: '100%' }}>
-                    <Card size="small" className="filters-card">
-                      <Row gutter={[16, 16]}>
-                        <Col span={8}>
-                          <div className="filter-group">
-                            <div className="filter-title">地区</div>
-                            {regions.filter(r => r !== 'all').map(region => (
-                              <div key={region} className="filter-item">
-                                <Checkbox
-                                  indeterminate={getGroupCheckStatus('region', region) === 'partial'}
-                                  checked={getGroupCheckStatus('region', region) === 'all'}
-                                  onChange={(e) => handleGroupSelect('region', region, e.target.checked)}
-                                >
-                                  {region}
-                                  <span className="instance-count">
-                                    ({selectedInstances.filter(id => 
-                                      instances.find(i => i.id === id)?.region === region
-                                    ).length} / {instances.filter(i => 
-                                      i.region === region && i.status !== INSTANCE_STATUS.STOPPED
-                                    ).length})
-                                  </span>
-                                </Checkbox>
-                              </div>
-                            ))}
-                          </div>
-                        </Col>
-                        <Col span={8}>
-                          <div className="filter-group">
-                            <div className="filter-title">规格</div>
-                            {specifications.filter(s => s !== 'all').map(spec => (
-                              <div key={spec} className="filter-item">
-                                <Checkbox
-                                  indeterminate={getGroupCheckStatus('specification', spec) === 'partial'}
-                                  checked={getGroupCheckStatus('specification', spec) === 'all'}
-                                  onChange={(e) => handleGroupSelect('specification', spec, e.target.checked)}
-                                >
-                                  {spec}
-                                  <span className="instance-count">
-                                    ({selectedInstances.filter(id => 
-                                      instances.find(i => i.id === id)?.specification === spec
-                                    ).length} / {instances.filter(i => 
-                                      i.specification === spec && i.status !== INSTANCE_STATUS.STOPPED
-                                    ).length})
-                                  </span>
-                                </Checkbox>
-                              </div>
-                            ))}
-                          </div>
-                        </Col>
-                        <Col span={8}>
-                          <div className="filter-group">
-                            <div className="filter-title">CPU类型</div>
-                            {cpuTypes.filter(c => c !== 'all').map(cpu => (
-                              <div key={cpu} className="filter-item">
-                                <Checkbox
-                                  indeterminate={getGroupCheckStatus('cpuType', cpu) === 'partial'}
-                                  checked={getGroupCheckStatus('cpuType', cpu) === 'all'}
-                                  onChange={(e) => handleGroupSelect('cpuType', cpu, e.target.checked)}
-                                >
-                                  {cpu}
-                                  <span className="instance-count">
-                                    ({selectedInstances.filter(id => 
-                                      instances.find(i => i.id === id)?.cpuType === cpu
-                                    ).length} / {instances.filter(i => 
-                                      i.cpuType === cpu && i.status !== INSTANCE_STATUS.STOPPED
-                                    ).length})
-                                  </span>
-                                </Checkbox>
-                              </div>
-                            ))}
-                          </div>
-                        </Col>
-                      </Row>
-                    </Card>
-
-                    <div className="instances-list">
-                      {filteredInstances.map(instance => (
-                        <Card
-                          key={instance.id}
-                          size="small"
-                          className={`instance-card ${
-                            instance.status === INSTANCE_STATUS.STOPPED ? 'disabled' : ''
-                          }`}
-                          style={{ marginBottom: 8 }}
-                        >
-                          <Checkbox
-                            checked={selectedInstances.includes(instance.id)}
-                            onChange={() => handleInstanceSelect(instance.id)}
-                            disabled={instance.status === INSTANCE_STATUS.STOPPED}
-                          >
-                            <Space>
-                              <span className="instance-name">{instance.name}</span>
-                              <Tag color={getStatusColor(instance.status)}>
-                                {instance.status}
-                              </Tag>
-                              <span className="instance-spec">
-                                {instance.specification}
-                              </span>
-                            </Space>
-                          </Checkbox>
-                          <div 
-                            className="instance-hover-info"
-                            onClick={() => !instance.status === INSTANCE_STATUS.STOPPED && 
-                              handleInstanceSelect(instance.id)}
-                          >
-                            IP: {instance.ip}<br/>
-                            CPU: {instance.cpuType}
-                          </div>
-                        </Card>
-                      ))}
-                    </div>
-                  </Space>
-                </div>
+                <InstanceSelector />
               </Form.Item>
 
               <Alert
