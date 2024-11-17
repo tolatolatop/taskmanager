@@ -35,8 +35,8 @@ function TaskDetail() {
   const { tasks, updateTask, deleteTask } = useContext(TaskContext);
   const [task, setTask] = useState(null);
   const [logFilters, setLogFilters] = useState({
-    INFO: true,
-    DEBUG: true,
+    INFO: false,
+    DEBUG: false,
     WARN: true,
     ERROR: true
   });
