@@ -36,9 +36,9 @@ const generateLogs = (taskId, startTime, taskType = 'normal', instances = []) =>
 
         if (taskType === 'deploy' && instances.length > 0) {
             const instance = instances[i % instances.length];
-            message += `在实例 ${instance.name}(${instance.ip}) 上${logType === 'ERROR' ? '部署失败，请检查系统日志' :
-                logType === 'WARN' ? '部署警告，响应时间超出预期' :
-                    `部署进行中，进度 ${(i + 1) * 10}%`
+            message += `在实例 ${instance.name}(${instance.ip}, ${instance.region}) 上${logType === 'ERROR' ? `部署失败，实例状态: ${instance.status}，请检查系统日志` :
+                logType === 'WARN' ? `部署警告，实例规格: ${instance.specification}，性能可能不足` :
+                    `部署进行中，进度 ${(i + 1) * 10}%，CPU类型: ${instance.cpuType}`
                 }`;
         } else {
             message += logType === 'ERROR' ? '发生异常，请检查系统日志' :
@@ -52,11 +52,206 @@ const generateLogs = (taskId, startTime, taskType = 'normal', instances = []) =>
 
 // 模拟实例数据
 const mockInstances = [
-    { id: 1, name: '生产环境-1', ip: '192.168.1.101' },
-    { id: 2, name: '生产环境-2', ip: '192.168.1.102' },
-    { id: 3, name: '测试环境-1', ip: '192.168.2.101' },
-    { id: 4, name: '测试环境-2', ip: '192.168.2.102' },
-    { id: 5, name: '开发环境', ip: '192.168.3.101' }
+    {
+        id: 1,
+        name: '生产环境-1',
+        ip: '192.168.1.101',
+        region: '华东-上海',
+        status: 'running',  // running, stopped, maintenance
+        specification: '8C16G',  // 简化规格显示
+        cpuType: 'Intel Xeon Platinum 8269CY',
+        lastHeartbeat: '2024-03-20 10:30:00'
+    },
+    {
+        id: 2,
+        name: '生产环境-2',
+        ip: '192.168.1.102',
+        region: '华东-上海',
+        status: 'running',
+        specification: '8C16G',
+        cpuType: 'Intel Xeon Platinum 8269CY',
+        lastHeartbeat: '2024-03-20 10:29:55'
+    },
+    {
+        id: 3,
+        name: '测试环境-1',
+        ip: '192.168.2.101',
+        region: '华北-北京',
+        status: 'running',
+        specification: '4C8G',
+        cpuType: 'AMD EPYC 7K62',
+        lastHeartbeat: '2024-03-20 10:30:00'
+    },
+    {
+        id: 4,
+        name: '测试环境-2',
+        ip: '192.168.2.102',
+        region: '华北-北京',
+        status: 'maintenance',
+        specification: '4C8G',
+        cpuType: 'AMD EPYC 7K62',
+        lastHeartbeat: '2024-03-20 09:15:30'
+    },
+    {
+        id: 5,
+        name: '开发环境',
+        ip: '192.168.3.101',
+        region: '华南-广州',
+        status: 'running',
+        specification: '2C4G',
+        cpuType: 'Intel Xeon E5-2680 v4',
+        lastHeartbeat: '2024-03-20 10:29:58'
+    },
+    {
+        id: 6,
+        name: '灾备环境-1',
+        ip: '192.168.4.101',
+        region: '西南-成都',
+        status: 'stopped',
+        specification: '8C16G',
+        cpuType: 'Intel Xeon Platinum 8269CY',
+        lastHeartbeat: '2024-03-19 18:30:00'
+    },
+    {
+        id: 7,
+        name: '预发布环境-1',
+        ip: '192.168.5.101',
+        region: '华东-杭州',
+        status: 'running',
+        specification: '4C8G',
+        cpuType: 'Intel Xeon Gold 6248R',
+        lastHeartbeat: '2024-03-20 10:28:00'
+    },
+    {
+        id: 8,
+        name: '预发布环境-2',
+        ip: '192.168.5.102',
+        region: '华东-杭州',
+        status: 'running',
+        specification: '4C8G',
+        cpuType: 'Intel Xeon Gold 6248R',
+        lastHeartbeat: '2024-03-20 10:29:00'
+    },
+    {
+        id: 9,
+        name: '性能测试环境-1',
+        ip: '192.168.6.101',
+        region: '华南-深圳',
+        status: 'running',
+        specification: '16C32G',
+        cpuType: 'AMD EPYC 7763',
+        lastHeartbeat: '2024-03-20 10:30:00'
+    },
+    {
+        id: 10,
+        name: '性能测试环境-2',
+        ip: '192.168.6.102',
+        region: '华南-深圳',
+        status: 'maintenance',
+        specification: '16C32G',
+        cpuType: 'AMD EPYC 7763',
+        lastHeartbeat: '2024-03-20 08:15:00'
+    },
+    {
+        id: 11,
+        name: '数据分析环境-1',
+        ip: '192.168.7.101',
+        region: '华北-北京',
+        status: 'running',
+        specification: '32C64G',
+        cpuType: 'Intel Xeon Platinum 8358P',
+        lastHeartbeat: '2024-03-20 10:29:30'
+    },
+    {
+        id: 12,
+        name: '数据分析环境-2',
+        ip: '192.168.7.102',
+        region: '华北-北京',
+        status: 'running',
+        specification: '32C64G',
+        cpuType: 'Intel Xeon Platinum 8358P',
+        lastHeartbeat: '2024-03-20 10:29:45'
+    },
+    {
+        id: 13,
+        name: 'AI训练环境-1',
+        ip: '192.168.8.101',
+        region: '华东-上海',
+        status: 'running',
+        specification: '64C128G',
+        cpuType: 'AMD EPYC 7763',
+        lastHeartbeat: '2024-03-20 10:30:00'
+    },
+    {
+        id: 14,
+        name: 'AI训练环境-2',
+        ip: '192.168.8.102',
+        region: '华东-上海',
+        status: 'stopped',
+        specification: '64C128G',
+        cpuType: 'AMD EPYC 7763',
+        lastHeartbeat: '2024-03-19 22:15:00'
+    },
+    {
+        id: 15,
+        name: '容灾备份环境-1',
+        ip: '192.168.9.101',
+        region: '西南-重庆',
+        status: 'running',
+        specification: '8C16G',
+        cpuType: 'Intel Xeon Gold 6248R',
+        lastHeartbeat: '2024-03-20 10:28:30'
+    },
+    {
+        id: 16,
+        name: '容灾备份环境-2',
+        ip: '192.168.9.102',
+        region: '西南-重庆',
+        status: 'running',
+        specification: '8C16G',
+        cpuType: 'Intel Xeon Gold 6248R',
+        lastHeartbeat: '2024-03-20 10:29:30'
+    },
+    {
+        id: 17,
+        name: '安全测试环境',
+        ip: '192.168.10.101',
+        region: '华南-广州',
+        status: 'running',
+        specification: '4C8G',
+        cpuType: 'Intel Xeon E5-2680 v4',
+        lastHeartbeat: '2024-03-20 10:29:00'
+    },
+    {
+        id: 18,
+        name: '压力测试环境',
+        ip: '192.168.10.102',
+        region: '华南-广州',
+        status: 'maintenance',
+        specification: '16C32G',
+        cpuType: 'AMD EPYC 7763',
+        lastHeartbeat: '2024-03-20 09:45:00'
+    },
+    {
+        id: 19,
+        name: '自动化测试环境',
+        ip: '192.168.11.101',
+        region: '华东-南京',
+        status: 'running',
+        specification: '8C16G',
+        cpuType: 'Intel Xeon Gold 6248R',
+        lastHeartbeat: '2024-03-20 10:28:45'
+    },
+    {
+        id: 20,
+        name: '集成测试环境',
+        ip: '192.168.11.102',
+        region: '华东-南京',
+        status: 'running',
+        specification: '8C16G',
+        cpuType: 'Intel Xeon Gold 6248R',
+        lastHeartbeat: '2024-03-20 10:29:15'
+    }
 ];
 
 // 模拟数据
@@ -75,11 +270,14 @@ const mockTasks = [
     {
         id: 2,
         title: '部署新版本到测试环境',
-        description: '将v2.0.0版本部署到测试环境',
+        description: '将v2.0.0版本部署到测试环境，需要验证新的性能优化',
         type: 'deploy',
         status: '进行中',
         progress: 40,
-        instances: [mockInstances[2], mockInstances[3]], // 测试环境实例
+        instances: [
+            mockInstances[2],
+            mockInstances[3]
+        ],
         createdAt: '2024-03-16 14:30:00',
         completedAt: null,
         logs: generateLogs(2, '2024-03-16 14:30:00', 'deploy', [mockInstances[2], mockInstances[3]])
@@ -171,8 +369,34 @@ export const MockTaskAPI = {
         console.log('Mock: 获取实例列表');
         await delay(300);
         return [...mockInstances];
+    },
+
+    // 获取实例详细信息
+    getInstanceDetails: async (instanceId) => {
+        console.log('Mock: 获取实例详细信息', instanceId);
+        await delay(300);
+        const instance = mockInstances.find(i => i.id === instanceId);
+        if (!instance) throw new Error('实例未找到');
+        return { ...instance };
+    },
+
+    // 获取实例状态
+    getInstanceStatus: async (instanceId) => {
+        console.log('Mock: 获取实例状态', instanceId);
+        await delay(200);
+        const instance = mockInstances.find(i => i.id === instanceId);
+        if (!instance) throw new Error('实例未找到');
+        return {
+            status: instance.status,
+            lastHeartbeat: instance.lastHeartbeat
+        };
     }
 };
 
-// 导出实例数据，供其他组件使用
-export const MOCK_INSTANCES = mockInstances; 
+// 导出实例数据和状态枚举
+export const MOCK_INSTANCES = mockInstances;
+export const INSTANCE_STATUS = {
+    RUNNING: 'running',
+    STOPPED: 'stopped',
+    MAINTENANCE: 'maintenance'
+}; 
