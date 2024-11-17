@@ -1,4 +1,4 @@
-import { useContext, useEffect, useState } from 'react';
+import { useContext, useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { TaskContext } from '../App';
 import { 
@@ -11,16 +11,19 @@ import {
   Descriptions, 
   Modal,
   message,
-  Progress
+  Progress,
+  Typography 
 } from 'antd';
 import { 
   DeleteOutlined, 
-  ExclamationCircleOutlined 
+  ExclamationCircleOutlined,
+  HistoryOutlined 
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 
 const { TextArea } = Input;
 const { confirm } = Modal;
+const { Text } = Typography;
 
 function TaskDetail() {
   const { id } = useParams();
@@ -28,12 +31,21 @@ function TaskDetail() {
   const { tasks, updateTask, deleteTask } = useContext(TaskContext);
   const [task, setTask] = useState(null);
 
+  // 日志自动滚动到底部
+  const logsEndRef = useRef(null);
+  
   useEffect(() => {
     const foundTask = tasks.find(t => t.id === parseInt(id));
     if (foundTask) {
       setTask(foundTask);
     }
   }, [id, tasks]);
+
+  useEffect(() => {
+    if (logsEndRef.current) {
+      logsEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [task?.logs]);
 
   if (!task) {
     return <div>任务未找到</div>;
@@ -107,6 +119,12 @@ function TaskDetail() {
     }
   };
 
+  // 获取最新的100条日志
+  const getRecentLogs = () => {
+    if (!task?.logs) return [];
+    return task.logs.slice(-100);
+  };
+
   return (
     <div className="task-detail">
       <Card
@@ -121,44 +139,68 @@ function TaskDetail() {
           </Button>
         }
       >
-        <Descriptions bordered column={1}>
-          <Descriptions.Item label="标题">{task.title}</Descriptions.Item>
-          <Descriptions.Item label="描述">{task.description}</Descriptions.Item>
-          <Descriptions.Item label="状态">
-            <Select
-              value={task.status}
-              onChange={handleStatusChange}
-              style={{ width: 200 }}
-            >
-              <Select.Option value="待处理">待处理</Select.Option>
-              <Select.Option value="进行中">进行中</Select.Option>
-              <Select.Option value="已完成">已完成</Select.Option>
-              <Select.Option value="失败">失败</Select.Option>
-            </Select>
-          </Descriptions.Item>
-          <Descriptions.Item label="进度">
-            <div style={{ width: '100%', maxWidth: 400, padding: '8px 0' }}>
-              <Progress 
-                percent={task.progress} 
-                status={getProgressStatus(task.status)}
-                steps={20}
-                strokeColor={task.status === '失败' ? '#ff4d4f' : undefined}
-                onChange={handleProgressChange}
-              />
-              <div style={{ marginTop: 8, color: '#666' }}>
-                点击或拖动进度条调整进度
-              </div>
-            </div>
-          </Descriptions.Item>
-          <Descriptions.Item label="创建时间">
-            {formatDateTime(task.createdAt)}
-          </Descriptions.Item>
-          {task.completedAt && (
-            <Descriptions.Item label="完成时间">
-              {formatDateTime(task.completedAt)}
+        <Space direction="vertical" style={{ width: '100%' }}>
+          <Descriptions bordered column={1}>
+            <Descriptions.Item label="标题">{task.title}</Descriptions.Item>
+            <Descriptions.Item label="描述">{task.description}</Descriptions.Item>
+            <Descriptions.Item label="状态">
+              <Select
+                value={task.status}
+                onChange={handleStatusChange}
+                style={{ width: 200 }}
+              >
+                <Select.Option value="待处理">待处理</Select.Option>
+                <Select.Option value="进行中">进行中</Select.Option>
+                <Select.Option value="已完成">已完成</Select.Option>
+                <Select.Option value="失败">失败</Select.Option>
+              </Select>
             </Descriptions.Item>
-          )}
-        </Descriptions>
+            <Descriptions.Item label="进度">
+              <div style={{ width: '100%', maxWidth: 400, padding: '8px 0' }}>
+                <Progress 
+                  percent={task.progress} 
+                  status={getProgressStatus(task.status)}
+                  steps={20}
+                  strokeColor={task.status === '失败' ? '#ff4d4f' : undefined}
+                  onChange={handleProgressChange}
+                />
+                <div style={{ marginTop: 8, color: '#666' }}>
+                  点击或拖动进度条调整进度
+                </div>
+              </div>
+            </Descriptions.Item>
+            <Descriptions.Item label="创建时间">
+              {formatDateTime(task.createdAt)}
+            </Descriptions.Item>
+            {task.completedAt && (
+              <Descriptions.Item label="完成时间">
+                {formatDateTime(task.completedAt)}
+              </Descriptions.Item>
+            )}
+          </Descriptions>
+
+          <Card 
+            title={
+              <Space>
+                <HistoryOutlined />
+                执行日志
+              </Space>
+            }
+            size="small"
+          >
+            <div className="task-logs">
+              {getRecentLogs().map((log, index) => (
+                <div key={index} className="log-entry">
+                  <Text type="secondary" style={{ marginRight: 8 }}>
+                    {dayjs(log.timestamp).format('YYYY-MM-DD HH:mm:ss')}
+                  </Text>
+                  <Text>{log.message}</Text>
+                </div>
+              ))}
+              <div ref={logsEndRef} />
+            </div>
+          </Card>
+        </Space>
       </Card>
     </div>
   );

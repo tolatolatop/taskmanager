@@ -7,7 +7,11 @@ const mockTasks = [
         status: '进行中',
         progress: 60,
         createdAt: '2024-03-15 10:00:00',
-        completedAt: null
+        completedAt: null,
+        logs: Array.from({ length: 150 }, (_, i) => ({
+            timestamp: new Date(Date.now() - (150 - i) * 60000).toISOString(),
+            message: `[INFO] 执行步骤 ${i + 1}: 正在处理用户认证模块...`
+        }))
     },
     {
         id: 2,

@@ -1,6 +1,6 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { createContext } from 'react';
-import { ConfigProvider } from 'antd';
+import { ConfigProvider, Layout } from 'antd';
 import zhCN from 'antd/locale/zh_CN';
 import { useTaskManager } from './hooks/useTaskManager';
 import TaskList from './components/TaskList';
@@ -9,6 +9,7 @@ import CreateTask from './components/CreateTask';
 import Navbar from './components/Navbar';
 import './styles/main.css';
 
+const { Content } = Layout;
 export const TaskContext = createContext();
 
 function App() {
@@ -18,16 +19,16 @@ function App() {
     <ConfigProvider locale={zhCN}>
       <TaskContext.Provider value={taskManager}>
         <Router>
-          <div className="app">
+          <Layout className="app">
             <Navbar />
-            <div className="container">
+            <Content className="container">
               <Routes>
                 <Route path="/" element={<TaskList />} />
                 <Route path="/task/:id" element={<TaskDetail />} />
                 <Route path="/create" element={<CreateTask />} />
               </Routes>
-            </div>
-          </div>
+            </Content>
+          </Layout>
         </Router>
       </TaskContext.Provider>
     </ConfigProvider>

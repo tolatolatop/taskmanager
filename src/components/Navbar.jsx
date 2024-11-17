@@ -1,9 +1,11 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Menu } from 'antd';
+import { Menu, Layout } from 'antd';
 import { 
   UnorderedListOutlined, 
   PlusOutlined
 } from '@ant-design/icons';
+
+const { Header } = Layout;
 
 function Navbar() {
   const location = useLocation();
@@ -22,7 +24,7 @@ function Navbar() {
   ];
 
   return (
-    <div className="navbar">
+    <Header className="navbar">
       <div className="nav-container">
         <Link to="/" className="nav-logo">
           <h2>任务管理系统</h2>
@@ -31,10 +33,10 @@ function Navbar() {
           mode="horizontal" 
           selectedKeys={[location.pathname]}
           items={items}
-          style={{ minWidth: 400 }}
+          style={{ minWidth: 400, border: 'none' }}
         />
       </div>
-    </div>
+    </Header>
   );
 }
 
