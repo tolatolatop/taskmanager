@@ -1,8 +1,24 @@
 import { useContext, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { TaskContext } from '../App';
-import { Form, Input, Card, Button, Select, Space, Alert, message } from 'antd';
+import { 
+  Form, 
+  Input, 
+  Card, 
+  Button, 
+  Select, 
+  Space, 
+  Alert, 
+  message,
+  Checkbox,
+  Row,
+  Col,
+  Tag,
+  Divider,
+  Radio
+} from 'antd';
 import { TaskAPI, TaskModel } from '../services/taskService';
+import { INSTANCE_STATUS } from '../services/mockService';
 
 const { TextArea } = Input;
 const { Option } = Select;
@@ -14,6 +30,8 @@ function CreateTask() {
   const [instances, setInstances] = useState([]);
   const [taskType, setTaskType] = useState(TaskModel.TYPE.NORMAL);
   const [loading, setLoading] = useState(false);
+  const [selectedRegion, setSelectedRegion] = useState('all');
+  const [selectedInstances, setSelectedInstances] = useState([]);
 
   useEffect(() => {
     const fetchInstances = async () => {
@@ -26,6 +44,53 @@ function CreateTask() {
     };
     fetchInstances();
   }, []);
+
+  // 获取所有可用的地区
+  const regions = ['all', ...new Set(instances.map(instance => instance.region))];
+
+  // 根据地区过滤实例
+  const filteredInstances = instances.filter(instance => 
+    selectedRegion === 'all' || instance.region === selectedRegion
+  );
+
+  // 处理实例选择
+  const handleInstanceSelect = (instanceId) => {
+    const instance = instances.find(i => i.id === instanceId);
+    if (instance && instance.status !== INSTANCE_STATUS.STOPPED) {
+      setSelectedInstances(prev => {
+        const newSelection = prev.includes(instanceId)
+          ? prev.filter(id => id !== instanceId)
+          : [...prev, instanceId];
+        form.setFieldValue('instances', newSelection);
+        return newSelection;
+      });
+    }
+  };
+
+  // 批量选择处理
+  const handleBatchSelect = (region) => {
+    const availableInstances = instances.filter(instance => 
+      (region === 'all' || instance.region === region) &&
+      instance.status !== INSTANCE_STATUS.STOPPED
+    );
+    const instanceIds = availableInstances.map(instance => instance.id);
+    setSelectedInstances(instanceIds);
+    form.setFieldValue('instances', instanceIds);
+  };
+
+  // 获取实例状态的标签颜色
+  const getStatusColor = (status) => {
+    switch(status) {
+      case INSTANCE_STATUS.RUNNING:
+        return 'success';
+      case INSTANCE_STATUS.MAINTENANCE:
+        return 'warning';
+      case INSTANCE_STATUS.STOPPED:
+        return 'error';
+      default:
+        return 'default';
+    }
+  };
 
   const handleSubmit = async (values) => {
     setLoading(true);
@@ -60,7 +125,7 @@ function CreateTask() {
 
   return (
     <div className="create-task">
-      <Card title="创建新任务" style={{ maxWidth: 800, margin: '0 auto' }}>
+      <Card title="创建新任务" style={{ maxWidth: 1200, margin: '0 auto' }}>
         <Form
           form={form}
           layout="vertical"
@@ -89,34 +154,94 @@ function CreateTask() {
           </Form.Item>
 
           {taskType === TaskModel.TYPE.DEPLOY && (
-            <Form.Item
-              name="instances"
-              label="部署实例"
-              rules={[{ 
-                required: true, 
-                message: '请选择至少一个部署实例',
-                type: 'array',
-                min: 1
-              }]}
-              extra="可以选择多个实例进行部署"
-            >
-              <Select
-                mode="multiple"
-                placeholder="请选择部署实例"
-                style={{ width: '100%' }}
-                optionFilterProp="children"
-                showSearch
+            <>
+              <Form.Item
+                name="instances"
+                label="部署实例"
+                rules={[{ 
+                  required: true, 
+                  message: '请选择至少一个部署实例',
+                  type: 'array',
+                  min: 1
+                }]}
               >
-                {instances.map(instance => (
-                  <Option 
-                    key={instance.id} 
-                    value={instance.id}
-                  >
-                    {instance.name} ({instance.ip})
-                  </Option>
-                ))}
-              </Select>
-            </Form.Item>
+                <div className="instance-selector">
+                  <Space direction="vertical" style={{ width: '100%' }}>
+                    <Card size="small">
+                      <Space>
+                        <span>地区筛选：</span>
+                        <Radio.Group 
+                          value={selectedRegion}
+                          onChange={e => setSelectedRegion(e.target.value)}
+                        >
+                          {regions.map(region => (
+                            <Radio.Button key={region} value={region}>
+                              {region === 'all' ? '全部地区' : region}
+                            </Radio.Button>
+                          ))}
+                        </Radio.Group>
+                        <Button 
+                          type="link" 
+                          onClick={() => handleBatchSelect(selectedRegion)}
+                        >
+                          全选当前地区可用实例
+                        </Button>
+                      </Space>
+                    </Card>
+                    
+                    <div className="instances-list">
+                      {filteredInstances.map(instance => (
+                        <Card
+                          key={instance.id}
+                          size="small"
+                          className={`instance-card ${
+                            instance.status === INSTANCE_STATUS.STOPPED ? 'disabled' : ''
+                          }`}
+                          style={{ marginBottom: 8 }}
+                        >
+                          <Checkbox
+                            checked={selectedInstances.includes(instance.id)}
+                            onChange={() => handleInstanceSelect(instance.id)}
+                            disabled={instance.status === INSTANCE_STATUS.STOPPED}
+                          >
+                            <Space>
+                              <span className="instance-name">{instance.name}</span>
+                              <Tag color={getStatusColor(instance.status)}>
+                                {instance.status}
+                              </Tag>
+                              <span className="instance-spec">
+                                {instance.specification}
+                              </span>
+                            </Space>
+                          </Checkbox>
+                          <div 
+                            className="instance-hover-info"
+                            onClick={() => handleInstanceSelect(instance.id)}
+                          >
+                            IP: {instance.ip}<br/>
+                            CPU: {instance.cpuType}
+                          </div>
+                        </Card>
+                      ))}
+                    </div>
+                  </Space>
+                </div>
+              </Form.Item>
+
+              <Alert
+                message="部署任务说明"
+                description={
+                  <ul>
+                    <li>已停止的实例无法选择</li>
+                    <li>维护中的实例可以选择，但可能会影响部署效果</li>
+                    <li>鼠标悬停在实例上可查看详细信息</li>
+                  </ul>
+                }
+                type="info"
+                showIcon
+                style={{ marginBottom: 24 }}
+              />
+            </>
           )}
 
           <Form.Item
@@ -133,16 +258,6 @@ function CreateTask() {
               }
             />
           </Form.Item>
-
-          {taskType === TaskModel.TYPE.DEPLOY && (
-            <Alert
-              message="部署任务说明"
-              description="部署任务将在选定的实例上执行部署操作，请确保已经完成相关准备工作。部署过程中可以在任务详情页查看每个实例的部署进度。"
-              type="info"
-              showIcon
-              style={{ marginBottom: 24 }}
-            />
-          )}
 
           <Form.Item>
             <Button 
