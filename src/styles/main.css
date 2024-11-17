@@ -246,4 +246,66 @@ body {
 
 .ant-card-body .ant-checkbox-wrapper {
   margin-right: 0 !important;
+}
+
+.region-group {
+  margin-bottom: 16px;
+}
+
+.region-card {
+  margin-bottom: 8px;
+  background-color: #fafafa;
+}
+
+.region-name {
+  font-weight: 500;
+  margin-right: 8px;
+}
+
+.instance-count {
+  color: #666;
+  font-size: 12px;
+}
+
+.region-instances {
+  padding-left: 24px;
+}
+
+/* 更新实例卡片样式 */
+.instance-card {
+  background-color: white;
+}
+
+.instance-card:hover {
+  background-color: #fafafa;
+}
+
+.filters-card {
+  background-color: #fafafa;
+  margin-bottom: 16px;
+}
+
+.filter-group {
+  padding: 8px;
+}
+
+.filter-title {
+  font-weight: 500;
+  margin-bottom: 8px;
+  color: #1890ff;
+  font-size: 14px;
+}
+
+.filter-item {
+  margin-bottom: 8px;
+}
+
+.filter-item:last-child {
+  margin-bottom: 0;
+}
+
+.instance-count {
+  margin-left: 8px;
+  color: #666;
+  font-size: 12px;
 } 

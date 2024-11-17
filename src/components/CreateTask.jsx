@@ -31,6 +31,8 @@ function CreateTask() {
   const [taskType, setTaskType] = useState(TaskModel.TYPE.NORMAL);
   const [loading, setLoading] = useState(false);
   const [selectedRegion, setSelectedRegion] = useState('all');
+  const [selectedSpec, setSelectedSpec] = useState('all');
+  const [selectedCpuType, setSelectedCpuType] = useState('all');
   const [selectedInstances, setSelectedInstances] = useState([]);
 
   useEffect(() => {
@@ -45,15 +47,28 @@ function CreateTask() {
     fetchInstances();
   }, []);
 
-  // 获取所有可用的地区
+  // 获取所有可用的选项
   const regions = ['all', ...new Set(instances.map(instance => instance.region))];
+  const specifications = ['all', ...new Set(instances.map(instance => instance.specification))];
+  const cpuTypes = ['all', ...new Set(instances.map(instance => instance.cpuType))];
 
-  // 根据地区过滤实例
-  const filteredInstances = instances.filter(instance => 
-    selectedRegion === 'all' || instance.region === selectedRegion
-  );
+  // 计算每个分组的选择状态
+  const getGroupCheckStatus = (type, value) => {
+    if (value === 'all') return;
+    const groupInstances = instances.filter(instance => 
+      instance[type] === value && 
+      instance.status !== INSTANCE_STATUS.STOPPED
+    );
+    const selectedCount = groupInstances.filter(instance => 
+      selectedInstances.includes(instance.id)
+    ).length;
 
-  // 处理实例选择
+    if (selectedCount === 0) return 'none';
+    if (selectedCount === groupInstances.length) return 'all';
+    return 'partial';
+  };
+
+  // 处理单个实例选择
   const handleInstanceSelect = (instanceId) => {
     const instance = instances.find(i => i.id === instanceId);
     if (instance && instance.status !== INSTANCE_STATUS.STOPPED) {
@@ -67,16 +82,12 @@ function CreateTask() {
     }
   };
 
-  // 批量选择处理
-  const handleBatchSelect = (region) => {
-    const availableInstances = instances.filter(instance => 
-      (region === 'all' || instance.region === region) &&
-      instance.status !== INSTANCE_STATUS.STOPPED
-    );
-    const instanceIds = availableInstances.map(instance => instance.id);
-    setSelectedInstances(instanceIds);
-    form.setFieldValue('instances', instanceIds);
-  };
+  // 过滤实例
+  const filteredInstances = instances.filter(instance => 
+    (selectedRegion === 'all' || instance.region === selectedRegion) &&
+    (selectedSpec === 'all' || instance.specification === selectedSpec) &&
+    (selectedCpuType === 'all' || instance.cpuType === selectedCpuType)
+  );
 
   // 获取实例状态的标签颜色
   const getStatusColor = (status) => {
@@ -123,6 +134,28 @@ function CreateTask() {
     }
   };
 
+  // 处理分组选择
+  const handleGroupSelect = (type, value, checked) => {
+    const groupInstances = instances.filter(instance => 
+      instance[type] === value && 
+      instance.status !== INSTANCE_STATUS.STOPPED
+    );
+    const groupInstanceIds = groupInstances.map(instance => instance.id);
+    
+    setSelectedInstances(prev => {
+      let newSelection;
+      if (checked) {
+        // 添加该分组所有可用实例
+        newSelection = [...new Set([...prev, ...groupInstanceIds])];
+      } else {
+        // 移除该分组所有实例
+        newSelection = prev.filter(id => !groupInstanceIds.includes(id));
+      }
+      form.setFieldValue('instances', newSelection);
+      return newSelection;
+    });
+  };
+
   return (
     <div className="create-task">
       <Card title="创建新任务" style={{ maxWidth: 1200, margin: '0 auto' }}>
@@ -158,37 +191,84 @@ function CreateTask() {
               <Form.Item
                 name="instances"
                 label="部署实例"
-                rules={[{ 
-                  required: true, 
-                  message: '请选择至少一个部署实例',
-                  type: 'array',
-                  min: 1
-                }]}
+                rules={[{ required: true, message: '请选择至少一个部署实例', type: 'array', min: 1 }]}
               >
                 <div className="instance-selector">
                   <Space direction="vertical" style={{ width: '100%' }}>
-                    <Card size="small">
-                      <Space>
-                        <span>地区筛选：</span>
-                        <Radio.Group 
-                          value={selectedRegion}
-                          onChange={e => setSelectedRegion(e.target.value)}
-                        >
-                          {regions.map(region => (
-                            <Radio.Button key={region} value={region}>
-                              {region === 'all' ? '全部地区' : region}
-                            </Radio.Button>
-                          ))}
-                        </Radio.Group>
-                        <Button 
-                          type="link" 
-                          onClick={() => handleBatchSelect(selectedRegion)}
-                        >
-                          全选当前地区可用实例
-                        </Button>
-                      </Space>
+                    <Card size="small" className="filters-card">
+                      <Row gutter={[16, 16]}>
+                        <Col span={8}>
+                          <div className="filter-group">
+                            <div className="filter-title">地区</div>
+                            {regions.filter(r => r !== 'all').map(region => (
+                              <div key={region} className="filter-item">
+                                <Checkbox
+                                  indeterminate={getGroupCheckStatus('region', region) === 'partial'}
+                                  checked={getGroupCheckStatus('region', region) === 'all'}
+                                  onChange={(e) => handleGroupSelect('region', region, e.target.checked)}
+                                >
+                                  {region}
+                                  <span className="instance-count">
+                                    ({selectedInstances.filter(id => 
+                                      instances.find(i => i.id === id)?.region === region
+                                    ).length} / {instances.filter(i => 
+                                      i.region === region && i.status !== INSTANCE_STATUS.STOPPED
+                                    ).length})
+                                  </span>
+                                </Checkbox>
+                              </div>
+                            ))}
+                          </div>
+                        </Col>
+                        <Col span={8}>
+                          <div className="filter-group">
+                            <div className="filter-title">规格</div>
+                            {specifications.filter(s => s !== 'all').map(spec => (
+                              <div key={spec} className="filter-item">
+                                <Checkbox
+                                  indeterminate={getGroupCheckStatus('specification', spec) === 'partial'}
+                                  checked={getGroupCheckStatus('specification', spec) === 'all'}
+                                  onChange={(e) => handleGroupSelect('specification', spec, e.target.checked)}
+                                >
+                                  {spec}
+                                  <span className="instance-count">
+                                    ({selectedInstances.filter(id => 
+                                      instances.find(i => i.id === id)?.specification === spec
+                                    ).length} / {instances.filter(i => 
+                                      i.specification === spec && i.status !== INSTANCE_STATUS.STOPPED
+                                    ).length})
+                                  </span>
+                                </Checkbox>
+                              </div>
+                            ))}
+                          </div>
+                        </Col>
+                        <Col span={8}>
+                          <div className="filter-group">
+                            <div className="filter-title">CPU类型</div>
+                            {cpuTypes.filter(c => c !== 'all').map(cpu => (
+                              <div key={cpu} className="filter-item">
+                                <Checkbox
+                                  indeterminate={getGroupCheckStatus('cpuType', cpu) === 'partial'}
+                                  checked={getGroupCheckStatus('cpuType', cpu) === 'all'}
+                                  onChange={(e) => handleGroupSelect('cpuType', cpu, e.target.checked)}
+                                >
+                                  {cpu}
+                                  <span className="instance-count">
+                                    ({selectedInstances.filter(id => 
+                                      instances.find(i => i.id === id)?.cpuType === cpu
+                                    ).length} / {instances.filter(i => 
+                                      i.cpuType === cpu && i.status !== INSTANCE_STATUS.STOPPED
+                                    ).length})
+                                  </span>
+                                </Checkbox>
+                              </div>
+                            ))}
+                          </div>
+                        </Col>
+                      </Row>
                     </Card>
-                    
+
                     <div className="instances-list">
                       {filteredInstances.map(instance => (
                         <Card
@@ -216,7 +296,8 @@ function CreateTask() {
                           </Checkbox>
                           <div 
                             className="instance-hover-info"
-                            onClick={() => handleInstanceSelect(instance.id)}
+                            onClick={() => !instance.status === INSTANCE_STATUS.STOPPED && 
+                              handleInstanceSelect(instance.id)}
                           >
                             IP: {instance.ip}<br/>
                             CPU: {instance.cpuType}
