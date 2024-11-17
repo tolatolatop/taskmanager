@@ -1,13 +1,14 @@
 import { useContext, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { TaskContext } from '../App';
-import { Card, Space, Row, Col, Spin, Input, Select } from 'antd';
+import { Card, Space, Row, Col, Spin, Input, Select, Progress, Empty, Badge, Tag } from 'antd';
 import { 
   ClockCircleOutlined, 
   CheckCircleOutlined, 
   SyncOutlined, 
   CloseCircleOutlined,
-  SearchOutlined 
+  SearchOutlined,
+  OrderedListOutlined 
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 
@@ -18,6 +19,7 @@ function TaskList() {
   const [filteredTasks, setFilteredTasks] = useState([]);
   const [searchText, setSearchText] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [sortBy, setSortBy] = useState('createdAt');
 
   useEffect(() => {
     console.log('TaskList: 开始获取任务列表');
@@ -25,10 +27,10 @@ function TaskList() {
   }, [fetchTasks]);
 
   useEffect(() => {
-    filterTasks();
-  }, [tasks, searchText, statusFilter]);
+    filterAndSortTasks();
+  }, [tasks, searchText, statusFilter, sortBy]);
 
-  const filterTasks = () => {
+  const filterAndSortTasks = () => {
     let result = [...tasks];
     
     // 文本搜索过滤
@@ -43,6 +45,20 @@ function TaskList() {
     if (statusFilter !== 'all') {
       result = result.filter(task => task.status === statusFilter);
     }
+    
+    // 排序
+    result.sort((a, b) => {
+      switch (sortBy) {
+        case 'createdAt':
+          return new Date(b.createdAt) - new Date(a.createdAt);
+        case 'progress':
+          return b.progress - a.progress;
+        case 'status':
+          return a.status.localeCompare(b.status);
+        default:
+          return 0;
+      }
+    });
     
     setFilteredTasks(result);
   };
@@ -66,6 +82,19 @@ function TaskList() {
     return dayjs(dateTimeStr).format('YYYY-MM-DD HH:mm:ss');
   };
 
+  const getProgressStatus = (status) => {
+    switch(status) {
+      case '已完成':
+        return 'success';
+      case '失败':
+        return 'exception';
+      case '进行中':
+        return 'active';
+      default:
+        return 'normal';
+    }
+  };
+
   if (loading) {
     return (
       <div style={{ textAlign: 'center', padding: '50px' }}>
@@ -76,7 +105,16 @@ function TaskList() {
 
   return (
     <div className="task-list">
-      <Card title="任务列表">
+      <Card title={
+        <Space>
+          <OrderedListOutlined />
+          任务列表
+          <Badge 
+            count={filteredTasks.length} 
+            style={{ backgroundColor: '#52c41a' }} 
+          />
+        </Space>
+      }>
         <Space direction="vertical" style={{ width: '100%', marginBottom: 20 }}>
           <Row gutter={16}>
             <Col flex="auto">
@@ -101,34 +139,62 @@ function TaskList() {
                 ]}
               />
             </Col>
+            <Col>
+              <Select
+                defaultValue="createdAt"
+                style={{ width: 120 }}
+                onChange={setSortBy}
+                options={[
+                  { value: 'createdAt', label: '创建时间' },
+                  { value: 'progress', label: '完成进度' },
+                  { value: 'status', label: '任务状态' }
+                ]}
+              />
+            </Col>
           </Row>
         </Space>
 
-        <Row gutter={[16, 16]}>
-          {filteredTasks.map(task => (
-            <Col xs={24} sm={12} md={8} key={task.id}>
-              <Card 
-                title={task.title}
-                extra={<Link to={`/task/${task.id}`}>详情</Link>}
-                hoverable
-              >
-                <Space direction="vertical" style={{ width: '100%' }}>
-                  <div>
+        {filteredTasks.length === 0 ? (
+          <Empty description="暂无任务" />
+        ) : (
+          <Row gutter={[16, 16]}>
+            {filteredTasks.map(task => (
+              <Col xs={24} sm={12} md={8} key={task.id}>
+                <Card 
+                  title={
                     <Space>
-                      {getStatusIcon(task.status)}
-                      <span>{task.status}</span>
+                      <Tag color={
+                        task.status === '已完成' ? 'success' :
+                        task.status === '进行中' ? 'processing' :
+                        task.status === '失败' ? 'error' :
+                        'warning'
+                      }>
+                        {getStatusIcon(task.status)}
+                        {task.status}
+                      </Tag>
+                      {task.title}
                     </Space>
-                  </div>
-                  <div>创建时间: {formatDateTime(task.createdAt)}</div>
-                  {task.completedAt && (
-                    <div>完成时间: {formatDateTime(task.completedAt)}</div>
-                  )}
-                  <div>{task.description}</div>
-                </Space>
-              </Card>
-            </Col>
-          ))}
-        </Row>
+                  }
+                  extra={<Link to={`/task/${task.id}`}>详情</Link>}
+                  hoverable
+                >
+                  <Space direction="vertical" style={{ width: '100%' }}>
+                    <Progress 
+                      percent={task.progress} 
+                      status={getProgressStatus(task.status)}
+                      size="small"
+                    />
+                    <div>创建时间: {formatDateTime(task.createdAt)}</div>
+                    {task.completedAt && (
+                      <div>完成时间: {formatDateTime(task.completedAt)}</div>
+                    )}
+                    <div className="task-description">{task.description}</div>
+                  </Space>
+                </Card>
+              </Col>
+            ))}
+          </Row>
+        )}
       </Card>
     </div>
   );

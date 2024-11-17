@@ -10,7 +10,8 @@ import {
   Space, 
   Descriptions, 
   Modal,
-  message 
+  message,
+  Progress
 } from 'antd';
 import { 
   DeleteOutlined, 
@@ -49,6 +50,30 @@ function TaskDetail() {
     message.success('任务状态更新成功');
   };
 
+  const handleProgressChange = async (value) => {
+    const progress = Math.min(100, Math.max(0, value));
+    
+    let newStatus = task.status;
+    if (progress === 100) {
+      newStatus = '已完成';
+    } else if (progress === 0) {
+      newStatus = '待处理';
+    } else if (task.status === '待处理' || task.status === '已完成') {
+      newStatus = '进行中';
+    }
+
+    const updatedTask = {
+      ...task,
+      progress,
+      status: newStatus,
+      completedAt: newStatus === '已完成' ? new Date().toISOString() : null
+    };
+    
+    await updateTask(updatedTask.id, updatedTask);
+    setTask(updatedTask);
+    message.success('任务进度更新成功');
+  };
+
   const showDeleteConfirm = () => {
     confirm({
       title: '确定要删除这个任务吗？',
@@ -67,6 +92,19 @@ function TaskDetail() {
 
   const formatDateTime = (dateTimeStr) => {
     return dayjs(dateTimeStr).format('YYYY-MM-DD HH:mm:ss');
+  };
+
+  const getProgressStatus = (status) => {
+    switch(status) {
+      case '已完成':
+        return 'success';
+      case '失败':
+        return 'exception';
+      case '进行中':
+        return 'active';
+      default:
+        return 'normal';
+    }
   };
 
   return (
@@ -97,6 +135,20 @@ function TaskDetail() {
               <Select.Option value="已完成">已完成</Select.Option>
               <Select.Option value="失败">失败</Select.Option>
             </Select>
+          </Descriptions.Item>
+          <Descriptions.Item label="进度">
+            <div style={{ width: '100%', maxWidth: 400, padding: '8px 0' }}>
+              <Progress 
+                percent={task.progress} 
+                status={getProgressStatus(task.status)}
+                steps={20}
+                strokeColor={task.status === '失败' ? '#ff4d4f' : undefined}
+                onChange={handleProgressChange}
+              />
+              <div style={{ marginTop: 8, color: '#666' }}>
+                点击或拖动进度条调整进度
+              </div>
+            </div>
           </Descriptions.Item>
           <Descriptions.Item label="创建时间">
             {formatDateTime(task.createdAt)}

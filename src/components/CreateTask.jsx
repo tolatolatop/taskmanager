@@ -14,6 +14,7 @@ function CreateTask() {
     const newTask = {
       ...values,
       status: '待处理',
+      progress: 0,
       createdAt: new Date().toISOString(),
       completedAt: null
     };
