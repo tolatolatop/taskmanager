@@ -1,12 +1,14 @@
 import { useContext, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { TaskContext } from '../App';
-import { Card, Tag, Space, Row, Col, Spin } from 'antd';
+import { Card, Space, Row, Col, Spin, Tag } from 'antd';
 import { 
   ClockCircleOutlined, 
   CheckCircleOutlined, 
-  SyncOutlined 
+  SyncOutlined, 
+  CloseCircleOutlined 
 } from '@ant-design/icons';
+import dayjs from 'dayjs';
 
 function TaskList() {
   const { tasks, loading, fetchTasks } = useContext(TaskContext);
@@ -24,22 +26,15 @@ function TaskList() {
         return <SyncOutlined spin style={{ color: '#1890ff' }} />;
       case '已完成':
         return <CheckCircleOutlined style={{ color: '#52c41a' }} />;
+      case '失败':
+        return <CloseCircleOutlined style={{ color: '#ff4d4f' }} />;
       default:
         return null;
     }
   };
 
-  const getPriorityColor = (priority) => {
-    switch(priority) {
-      case 'high':
-        return 'red';
-      case 'normal':
-        return 'blue';
-      case 'low':
-        return 'green';
-      default:
-        return 'default';
-    }
+  const formatDateTime = (dateTimeStr) => {
+    return dayjs(dateTimeStr).format('YYYY-MM-DD HH:mm:ss');
   };
 
   if (loading) {
@@ -68,13 +63,11 @@ function TaskList() {
                     <span>{task.status}</span>
                   </Space>
                 </div>
-                <div>
-                  <Tag color={getPriorityColor(task.priority)}>
-                    {task.priority === 'high' ? '高优先级' : 
-                     task.priority === 'normal' ? '中优先级' : '低优先级'}
-                  </Tag>
-                </div>
-                <div>截止日期: {task.dueDate}</div>
+                <div>创建时间: {formatDateTime(task.createdAt)}</div>
+                {task.completedAt && (
+                  <div>完成时间: {formatDateTime(task.completedAt)}</div>
+                )}
+                <div>{task.description}</div>
               </Space>
             </Card>
           </Col>

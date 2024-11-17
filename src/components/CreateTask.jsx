@@ -1,8 +1,7 @@
 import { useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { TaskContext } from '../App';
-import { Form, Input, Select, DatePicker, Button, Card } from 'antd';
-import dayjs from 'dayjs';
+import { Form, Input, Card, Button } from 'antd';
 
 const { TextArea } = Input;
 
@@ -14,8 +13,9 @@ function CreateTask() {
   const handleSubmit = (values) => {
     const newTask = {
       ...values,
-      dueDate: values.dueDate.format('YYYY-MM-DD'),
-      status: '待处理'
+      status: '待处理',
+      createdAt: new Date().toISOString(),
+      completedAt: null
     };
     addTask(newTask);
     navigate('/');
@@ -28,10 +28,6 @@ function CreateTask() {
           form={form}
           layout="vertical"
           onFinish={handleSubmit}
-          initialValues={{
-            priority: 'normal',
-            dueDate: dayjs()
-          }}
         >
           <Form.Item
             name="title"
@@ -46,25 +42,6 @@ function CreateTask() {
             label="描述"
           >
             <TextArea rows={4} placeholder="请输入任务描述" />
-          </Form.Item>
-
-          <Form.Item
-            name="priority"
-            label="优先级"
-          >
-            <Select>
-              <Select.Option value="low">低优先级</Select.Option>
-              <Select.Option value="normal">中优先级</Select.Option>
-              <Select.Option value="high">高优先级</Select.Option>
-            </Select>
-          </Form.Item>
-
-          <Form.Item
-            name="dueDate"
-            label="截止日期"
-            rules={[{ required: true, message: '请选择截止日期' }]}
-          >
-            <DatePicker style={{ width: '100%' }} />
           </Form.Item>
 
           <Form.Item>

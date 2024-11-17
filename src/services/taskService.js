@@ -82,14 +82,8 @@ export const TaskModel = {
     STATUS: {
         PENDING: '待处理',
         IN_PROGRESS: '进行中',
-        COMPLETED: '已完成'
-    },
-
-    // 优先级枚举
-    PRIORITY: {
-        LOW: 'low',
-        NORMAL: 'normal',
-        HIGH: 'high'
+        COMPLETED: '已完成',
+        FAILED: '失败'
     },
 
     // 验证任务数据
@@ -100,21 +94,17 @@ export const TaskModel = {
             errors.title = '标题不能为空';
         }
 
-        if (!task.dueDate) {
-            errors.dueDate = '截止日期不能为空';
-        }
-
         return {
             isValid: Object.keys(errors).length === 0,
             errors
         };
     },
 
-    // 格���化任务数据
+    // 格式化任务数据
     formatTask: (task) => ({
         ...task,
-        dueDate: task.dueDate.format?.('YYYY-MM-DD') || task.dueDate,
         status: task.status || TaskModel.STATUS.PENDING,
-        priority: task.priority || TaskModel.PRIORITY.NORMAL
+        createdAt: task.createdAt || new Date().toISOString(),
+        completedAt: task.completedAt || null
     })
 }; 

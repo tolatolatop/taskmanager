@@ -5,24 +5,32 @@ const mockTasks = [
         title: '开发用户认证功能',
         description: '实现用户登录、注册和权限控制功能',
         status: '进行中',
-        priority: 'high',
-        dueDate: '2024-04-01'
+        createdAt: '2024-03-15 10:00:00',
+        completedAt: null
     },
     {
         id: 2,
         title: '优化数据库查询',
         description: '提高查询性能，添加适当的索引',
         status: '待处理',
-        priority: 'normal',
-        dueDate: '2024-03-25'
+        createdAt: '2024-03-16 14:30:00',
+        completedAt: null
     },
     {
         id: 3,
         title: '修复界面Bug',
         description: '解决移动端显示异常问题',
         status: '已完成',
-        priority: 'low',
-        dueDate: '2024-03-20'
+        createdAt: '2024-03-10 09:15:00',
+        completedAt: '2024-03-20 16:45:00'
+    },
+    {
+        id: 4,
+        title: '服务器迁移',
+        description: '数据迁移过程中出现异常',
+        status: '失败',
+        createdAt: '2024-03-18 08:00:00',
+        completedAt: null
     }
 ];
 
