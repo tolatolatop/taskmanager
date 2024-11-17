@@ -15,7 +15,8 @@ import {
   Typography,
   Checkbox,
   Row,
-  Col 
+  Col,
+  Tag
 } from 'antd';
 import { 
   DeleteOutlined, 
@@ -186,6 +187,24 @@ function TaskDetail() {
           <Descriptions bordered column={1}>
             <Descriptions.Item label="标题">{task.title}</Descriptions.Item>
             <Descriptions.Item label="描述">{task.description}</Descriptions.Item>
+            <Descriptions.Item label="任务类型">
+              {task.type === 'deploy' ? '部署任务' : '普通任务'}
+            </Descriptions.Item>
+            {task.type === 'deploy' && task.instances && (
+              <Descriptions.Item label="部署实例">
+                <div style={{ padding: '8px 0' }}>
+                  {task.instances.map((instance, index) => (
+                    <Tag 
+                      key={instance.id}
+                      color="blue"
+                      style={{ marginBottom: 8 }}
+                    >
+                      {instance.name} ({instance.ip})
+                    </Tag>
+                  ))}
+                </div>
+              </Descriptions.Item>
+            )}
             <Descriptions.Item label="状态">
               <Select
                 value={task.status}
@@ -227,6 +246,9 @@ function TaskDetail() {
               <Space>
                 <HistoryOutlined />
                 执行日志
+                {task.type === 'deploy' && (
+                  <Tag color="blue">部署日志</Tag>
+                )}
               </Space>
             }
             size="small"

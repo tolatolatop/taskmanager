@@ -8,8 +8,11 @@ import {
   SyncOutlined, 
   CloseCircleOutlined,
   SearchOutlined,
-  OrderedListOutlined 
+  OrderedListOutlined,
+  CodeOutlined,
+  CloudUploadOutlined
 } from '@ant-design/icons';
+import { TaskModel } from '../services/taskService';
 import dayjs from 'dayjs';
 
 const { Search } = Input;
@@ -92,6 +95,32 @@ function TaskList() {
         return 'active';
       default:
         return 'normal';
+    }
+  };
+
+  const getTaskTypeIcon = (type) => {
+    switch(type) {
+      case TaskModel.TYPE.DEPLOY:
+        return <CloudUploadOutlined />;
+      default:
+        return <CodeOutlined />;
+    }
+  };
+
+  const getTaskTypeTag = (type) => {
+    switch(type) {
+      case TaskModel.TYPE.DEPLOY:
+        return (
+          <Tag icon={<CloudUploadOutlined />} color="blue">
+            部署任务
+          </Tag>
+        );
+      default:
+        return (
+          <Tag icon={<CodeOutlined />} color="cyan">
+            普通任务
+          </Tag>
+        );
     }
   };
 
@@ -179,6 +208,7 @@ function TaskList() {
                   hoverable
                 >
                   <Space direction="vertical" style={{ width: '100%' }}>
+                    {getTaskTypeTag(task.type)}
                     <Progress 
                       percent={task.progress} 
                       status={getProgressStatus(task.status)}

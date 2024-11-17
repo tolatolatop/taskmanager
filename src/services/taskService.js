@@ -78,6 +78,12 @@ export const TaskAPI = USE_MOCK ? MockTaskAPI : RealTaskAPI;
 
 // Task数据模型
 export const TaskModel = {
+    // 任务类型枚举
+    TYPE: {
+        NORMAL: 'normal',
+        DEPLOY: 'deploy'
+    },
+
     // 任务状态枚举
     STATUS: {
         PENDING: '待处理',
@@ -94,6 +100,10 @@ export const TaskModel = {
             errors.title = '标题不能为空';
         }
 
+        if (task.type === 'deploy' && (!task.instances || task.instances.length === 0)) {
+            errors.instances = '部署任务必须选择至少一个实例';
+        }
+
         return {
             isValid: Object.keys(errors).length === 0,
             errors
@@ -103,7 +113,10 @@ export const TaskModel = {
     // 格式化任务数据
     formatTask: (task) => ({
         ...task,
+        type: task.type || TaskModel.TYPE.NORMAL,
         status: task.status || TaskModel.STATUS.PENDING,
+        progress: task.progress || 0,
+        instances: task.instances || [],
         createdAt: task.createdAt || new Date().toISOString(),
         completedAt: task.completedAt || null
     })
