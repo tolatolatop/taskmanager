@@ -38,6 +38,20 @@ const request = async (endpoint, options = {}) => {
     }
 };
 
+
+const convertInstanceFromApiFormat = (instance) => {
+    return {
+        id: instance.id,
+        name: instance.name,
+        ip: instance.ip,
+        region: instance.region,
+        specification: instance.specification,
+        cpuType: instance.cpuType,
+        status: instance.status,
+        lastHeartbeat: instance.last_heartbeat
+    };
+};
+
 // 真实API实现
 const RealTaskAPI = {
     getTasks: async () => {
@@ -72,6 +86,37 @@ const RealTaskAPI = {
         return await request(`/tasks/search?q=${encodeURIComponent(query)}`);
     },
 
+    // 实例相关接口
+    getInstances: async () => {
+        const instances = await request('/instances');
+        return instances.map(convertInstanceFromApiFormat);
+    },
+
+    getInstanceDetails: async (instanceId) => {
+        const instance = await request(`/instances/${instanceId}`);
+        return convertInstanceFromApiFormat(instance);
+    },
+
+    getInstanceStatus: async (instanceId) => {
+        return await request(`/instances/${instanceId}/status`);
+    },
+
+    // 批量获取实例状态
+    batchGetInstanceStatus: async (instanceIds) => {
+        return await request('/instances/batch/status', {
+            method: 'POST',
+            body: JSON.stringify({ instanceIds }),
+        });
+    },
+
+    // 实例过滤
+    filterInstances: async (filters) => {
+        const queryString = new URLSearchParams(filters).toString();
+        const instances = await request(`/instances/filter?${queryString}`);
+        return instances.map(convertInstanceFromApiFormat);
+    },
+
+    // 任务日志
     fetchTaskLogs: async (taskId) => {
         try {
             const response = await fetch(`${BASE_URL}/tasks/${taskId}/logs`);
@@ -135,17 +180,28 @@ export const TaskModel = {
     })
 };
 
-// 添加获取日志的方法
-export const fetchTaskLogs = async (taskId) => {
-    try {
-        const response = await fetch(`${BASE_URL}/tasks/${taskId}/logs`);
-        if (!response.ok) {
-            throw new Error('Failed to fetch logs');
-        }
-        const data = await response.json();
-        return data.logs;
-    } catch (error) {
-        console.error('Error fetching logs:', error);
-        throw error;
-    }
+// 导出实例相关的枚举
+export const INSTANCE_STATUS = {
+    RUNNING: 'running',
+    STOPPED: 'stopped',
+    MAINTENANCE: 'maintenance'
+};
+
+export const INSTANCE_SPECIFICATION = {
+    SMALL: '2C4G',
+    MEDIUM: '4C8G',
+    LARGE: '8C16G',
+    XLARGE: '16C32G',
+    XXLARGE: '32C64G',
+    XXXLARGE: '64C128G'
+};
+
+export const INSTANCE_REGIONS = {
+    EAST_SHANGHAI: '华东-上海',
+    EAST_HANGZHOU: '华东-杭州',
+    NORTH_BEIJING: '华北-北京',
+    SOUTH_GUANGZHOU: '华南-广州',
+    SOUTH_SHENZHEN: '华南-深圳',
+    SOUTHWEST_CHENGDU: '西南-成都',
+    EAST_NANJING: '华东-南京'
 }; 
