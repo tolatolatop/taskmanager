@@ -1,3 +1,32 @@
+// 生成随机日志消息
+const generateLogs = (taskId, startTime) => {
+    const logTypes = ['INFO', 'DEBUG', 'WARN', 'ERROR'];
+    const actions = [
+        '初始化任务',
+        '加载配置',
+        '验证参数',
+        '连接数据库',
+        '执行操作',
+        '处理数据',
+        '更新缓存',
+        '清理资源',
+        '保存结果',
+        '完成任务'
+    ];
+
+    return Array.from({ length: 10 }, (_, i) => {
+        const logType = logTypes[Math.floor(Math.random() * (i === 0 ? 1 : logTypes.length))]; // 第一条始终是 INFO
+        const timestamp = new Date(new Date(startTime).getTime() + i * 300000).toISOString(); // 每条日志间隔5分钟
+        return {
+            timestamp,
+            message: `[${logType}] Task-${taskId} - ${actions[i]}: ${logType === 'ERROR' ? '发生异常，请检查系统日志' :
+                    logType === 'WARN' ? '性能警告，处理时间超出预期' :
+                        `正常执行中，进度 ${(i + 1) * 10}%`
+                }`
+        };
+    });
+};
+
 // 模拟数据
 const mockTasks = [
     {
@@ -8,10 +37,7 @@ const mockTasks = [
         progress: 60,
         createdAt: '2024-03-15 10:00:00',
         completedAt: null,
-        logs: Array.from({ length: 150 }, (_, i) => ({
-            timestamp: new Date(Date.now() - (150 - i) * 60000).toISOString(),
-            message: `[INFO] 执行步骤 ${i + 1}: 正在处理用户认证模块...`
-        }))
+        logs: generateLogs(1, '2024-03-15 10:00:00')
     },
     {
         id: 2,
@@ -20,7 +46,8 @@ const mockTasks = [
         status: '待处理',
         progress: 0,
         createdAt: '2024-03-16 14:30:00',
-        completedAt: null
+        completedAt: null,
+        logs: generateLogs(2, '2024-03-16 14:30:00')
     },
     {
         id: 3,
@@ -29,7 +56,8 @@ const mockTasks = [
         status: '已完成',
         progress: 100,
         createdAt: '2024-03-10 09:15:00',
-        completedAt: '2024-03-20 16:45:00'
+        completedAt: '2024-03-20 16:45:00',
+        logs: generateLogs(3, '2024-03-10 09:15:00')
     },
     {
         id: 4,
@@ -38,7 +66,8 @@ const mockTasks = [
         status: '失败',
         progress: 30,
         createdAt: '2024-03-18 08:00:00',
-        completedAt: null
+        completedAt: null,
+        logs: generateLogs(4, '2024-03-18 08:00:00')
     }
 ];
 

@@ -12,7 +12,10 @@ import {
   Modal,
   message,
   Progress,
-  Typography 
+  Typography,
+  Checkbox,
+  Row,
+  Col 
 } from 'antd';
 import { 
   DeleteOutlined, 
@@ -30,6 +33,12 @@ function TaskDetail() {
   const navigate = useNavigate();
   const { tasks, updateTask, deleteTask } = useContext(TaskContext);
   const [task, setTask] = useState(null);
+  const [logFilters, setLogFilters] = useState({
+    INFO: true,
+    DEBUG: true,
+    WARN: true,
+    ERROR: true
+  });
 
   // 日志自动滚动到底部
   const logsEndRef = useRef(null);
@@ -125,6 +134,40 @@ function TaskDetail() {
     return task.logs.slice(-100);
   };
 
+  // 获取过滤后的日志
+  const getFilteredLogs = () => {
+    if (!task?.logs) return [];
+    return task.logs
+      .filter(log => {
+        const logType = log.message.match(/\[(.*?)\]/)[1];
+        return logFilters[logType];
+      })
+      .slice(-100);
+  };
+
+  // 处理日志类型过滤变化
+  const handleLogFilterChange = (logType) => {
+    setLogFilters(prev => ({
+      ...prev,
+      [logType]: !prev[logType]
+    }));
+  };
+
+  // 获取日志类型的样式
+  const getLogTypeStyle = (message) => {
+    const logType = message.match(/\[(.*?)\]/)[1];
+    switch(logType) {
+      case 'ERROR':
+        return { color: '#ff4d4f' };
+      case 'WARN':
+        return { color: '#faad14' };
+      case 'DEBUG':
+        return { color: '#1890ff' };
+      default:
+        return { color: '#52c41a' };
+    }
+  };
+
   return (
     <div className="task-detail">
       <Card
@@ -187,14 +230,44 @@ function TaskDetail() {
               </Space>
             }
             size="small"
+            extra={
+              <Space>
+                <Checkbox
+                  checked={logFilters.INFO}
+                  onChange={() => handleLogFilterChange('INFO')}
+                >
+                  <Text style={{ color: '#52c41a' }}>INFO</Text>
+                </Checkbox>
+                <Checkbox
+                  checked={logFilters.DEBUG}
+                  onChange={() => handleLogFilterChange('DEBUG')}
+                >
+                  <Text style={{ color: '#1890ff' }}>DEBUG</Text>
+                </Checkbox>
+                <Checkbox
+                  checked={logFilters.WARN}
+                  onChange={() => handleLogFilterChange('WARN')}
+                >
+                  <Text style={{ color: '#faad14' }}>WARN</Text>
+                </Checkbox>
+                <Checkbox
+                  checked={logFilters.ERROR}
+                  onChange={() => handleLogFilterChange('ERROR')}
+                >
+                  <Text style={{ color: '#ff4d4f' }}>ERROR</Text>
+                </Checkbox>
+              </Space>
+            }
           >
             <div className="task-logs">
-              {getRecentLogs().map((log, index) => (
+              {getFilteredLogs().map((log, index) => (
                 <div key={index} className="log-entry">
                   <Text type="secondary" style={{ marginRight: 8 }}>
                     {dayjs(log.timestamp).format('YYYY-MM-DD HH:mm:ss')}
                   </Text>
-                  <Text>{log.message}</Text>
+                  <Text style={getLogTypeStyle(log.message)}>
+                    {log.message}
+                  </Text>
                 </div>
               ))}
               <div ref={logsEndRef} />

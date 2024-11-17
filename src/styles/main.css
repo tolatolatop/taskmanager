@@ -148,4 +148,17 @@ body {
   .create-task {
     padding: 0 16px;
   }
+}
+
+/* 日志过滤器样式 */
+.ant-checkbox-wrapper {
+  margin-right: 8px !important;
+}
+
+.ant-checkbox-wrapper:last-child {
+  margin-right: 0 !important;
+}
+
+.ant-card-extra .ant-space {
+  flex-wrap: wrap;
 } 
