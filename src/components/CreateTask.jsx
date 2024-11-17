@@ -39,6 +39,7 @@ function CreateTask() {
     const fetchInstances = async () => {
       try {
         const data = await TaskAPI.getInstances();
+        console.log('获取到的实例列表:', data);
         setInstances(data);
       } catch (error) {
         console.error('获取实例列表失败:', error);
@@ -70,12 +71,14 @@ function CreateTask() {
 
   // 处理单个实例选择
   const handleInstanceSelect = (instanceId) => {
+    console.log('单个实例选择/取消:', instanceId);
     const instance = instances.find(i => i.id === instanceId);
     if (instance && instance.status !== INSTANCE_STATUS.STOPPED) {
       setSelectedInstances(prev => {
         const newSelection = prev.includes(instanceId)
           ? prev.filter(id => id !== instanceId)
           : [...prev, instanceId];
+        console.log('更新后的选中实例:', newSelection);
         form.setFieldValue('instances', newSelection);
         return newSelection;
       });
@@ -106,6 +109,10 @@ function CreateTask() {
   const handleSubmit = async (values) => {
     setLoading(true);
     try {
+      const selectedInstancesData = instances.filter(instance => 
+        values.instances?.includes(instance.id)
+      );
+      
       const newTask = {
         ...values,
         type: taskType,
@@ -113,13 +120,22 @@ function CreateTask() {
         progress: 0,
         createdAt: new Date().toISOString(),
         completedAt: null,
-        instances: taskType === TaskModel.TYPE.DEPLOY ? values.instances : []
+        instances: taskType === TaskModel.TYPE.DEPLOY ? selectedInstancesData : []
       };
+
+      console.group('创建任务数据');
+      console.log('表单数据:', values);
+      console.log('任务类型:', taskType);
+      console.log('选中的实例IDs:', values.instances);
+      console.log('选中的实例详细信息:', selectedInstancesData);
+      console.log('完整的任务数据:', newTask);
+      console.groupEnd();
 
       await addTask(newTask);
       message.success('任务创建成功');
       navigate('/');
     } catch (error) {
+      console.error('创建任务失败:', error);
       message.error('创建任务失败: ' + error.message);
     } finally {
       setLoading(false);
@@ -127,30 +143,34 @@ function CreateTask() {
   };
 
   const handleTypeChange = (value) => {
+    console.log('任务类型变更:', value);
     setTaskType(value);
-    // 当类型改变时，清除实例选择
     if (value !== TaskModel.TYPE.DEPLOY) {
+      console.log('清除实例选择');
       form.setFieldValue('instances', undefined);
     }
   };
 
   // 处理分组选择
   const handleGroupSelect = (type, value, checked) => {
+    console.log(`分组选择 - 类型: ${type}, 值: ${value}, 选中: ${checked}`);
     const groupInstances = instances.filter(instance => 
       instance[type] === value && 
       instance.status !== INSTANCE_STATUS.STOPPED
     );
     const groupInstanceIds = groupInstances.map(instance => instance.id);
     
+    console.log('该分组可用实例:', groupInstances);
+    console.log('该分组实例IDs:', groupInstanceIds);
+
     setSelectedInstances(prev => {
       let newSelection;
       if (checked) {
-        // 添加该分组所有可用实例
         newSelection = [...new Set([...prev, ...groupInstanceIds])];
       } else {
-        // 移除该分组所有实例
         newSelection = prev.filter(id => !groupInstanceIds.includes(id));
       }
+      console.log('更新后的选中实例:', newSelection);
       form.setFieldValue('instances', newSelection);
       return newSelection;
     });
