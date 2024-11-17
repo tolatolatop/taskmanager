@@ -1,4 +1,4 @@
-import { useContext, useEffect, useState, useRef } from 'react';
+import { useContext, useEffect, useState, useRef, useMemo, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { TaskContext } from '../App';
 import { 
@@ -21,7 +21,10 @@ import {
 import { 
   DeleteOutlined, 
   ExclamationCircleOutlined,
-  HistoryOutlined 
+  HistoryOutlined,
+  ReloadOutlined,
+  PauseCircleOutlined,
+  PlayCircleOutlined
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 
@@ -32,7 +35,7 @@ const { Text } = Typography;
 function TaskDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { tasks, updateTask, deleteTask } = useContext(TaskContext);
+  const { tasks, updateTask, deleteTask, fetchTaskLogs } = useContext(TaskContext);
   const [task, setTask] = useState(null);
   const [logFilters, setLogFilters] = useState({
     INFO: false,
@@ -40,10 +43,25 @@ function TaskDetail() {
     WARN: true,
     ERROR: true
   });
-
-  // 日志自动滚动到底部
+  const [autoRefresh, setAutoRefresh] = useState(true);
+  const refreshTimerRef = useRef(null);
   const logsEndRef = useRef(null);
-  
+
+  const filteredLogs = useMemo(() => {
+    if (!task?.logs) return [];
+    
+    const filtered = task.logs.filter(log => {
+      if (!logFilters) return true;
+      
+      const logType = log.message.match(/\[(.*?)\]/)?.[1];
+      if (!logType) return true;
+      
+      return logFilters[logType];
+    });
+    
+    return filtered;
+  }, [task?.logs, logFilters]);
+
   useEffect(() => {
     const foundTask = tasks.find(t => t.id === parseInt(id));
     if (foundTask) {
@@ -56,6 +74,20 @@ function TaskDetail() {
       logsEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
   }, [task?.logs]);
+
+  useEffect(() => {
+    console.log('自动刷新状态变更:', autoRefresh, '任务ID:', task?.id);
+    if (autoRefresh && task) {
+      console.log('启动自动刷新定时器');
+      refreshTimerRef.current = setInterval(() => refreshLogs(false), 1000);
+    }
+    return () => {
+      if (refreshTimerRef.current) {
+        console.log('清除自动刷新定时器');
+        clearInterval(refreshTimerRef.current);
+      }
+    };
+  }, [autoRefresh, task?.id]);
 
   if (!task) {
     return <div>任务未找到</div>;
@@ -135,17 +167,6 @@ function TaskDetail() {
     return task.logs.slice(-100);
   };
 
-  // 获取过滤后的日志
-  const getFilteredLogs = () => {
-    if (!task?.logs) return [];
-    return task.logs
-      .filter(log => {
-        const logType = log.message.match(/\[(.*?)\]/)[1];
-        return logFilters[logType];
-      })
-      .slice(-100);
-  };
-
   // 处理日志类型过滤变化
   const handleLogFilterChange = (logType) => {
     setLogFilters(prev => ({
@@ -156,7 +177,12 @@ function TaskDetail() {
 
   // 获取日志类型的样式
   const getLogTypeStyle = (message) => {
-    const logType = message.match(/\[(.*?)\]/)[1];
+    const matches = message.match(/\[(.*?)\]/);
+    if (!matches || !matches[1]) {
+      return { color: '#52c41a' }; // 默认颜色
+    }
+    
+    const logType = matches[1];
     switch(logType) {
       case 'ERROR':
         return { color: '#ff4d4f' };
@@ -167,6 +193,34 @@ function TaskDetail() {
       default:
         return { color: '#52c41a' };
     }
+  };
+
+  // 添加刷新日志的函数
+  const refreshLogs = async (isManualRefresh = false) => {
+    // 只在手动刷新时输出详细日志
+    if (isManualRefresh) {
+      console.log('手动刷新日志, 任务ID:', task?.id);
+    }
+    
+    if (task) {
+      try {
+        const logs = await fetchTaskLogs(task.id);
+        if (isManualRefresh) {
+          console.log('获取到新日志:', logs?.length || 0, '条');
+        }
+        setTask(prev => ({
+          ...prev,
+          logs: logs
+        }));
+      } catch (error) {
+        console.error('刷新日志失败:', error);
+      }
+    }
+  };
+
+  // 修改手动刷新按钮的点击处理
+  const handleManualRefresh = () => {
+    refreshLogs(true);
   };
 
   return (
@@ -226,9 +280,6 @@ function TaskDetail() {
                   strokeColor={task.status === '失败' ? '#ff4d4f' : undefined}
                   onChange={handleProgressChange}
                 />
-                <div style={{ marginTop: 8, color: '#666' }}>
-                  点击或拖动进度条调整进度
-                </div>
               </div>
             </Descriptions.Item>
             <Descriptions.Item label="创建时间">
@@ -254,6 +305,18 @@ function TaskDetail() {
             size="small"
             extra={
               <Space>
+                <Button
+                  type="text"
+                  icon={autoRefresh ? <PauseCircleOutlined /> : <PlayCircleOutlined />}
+                  onClick={() => setAutoRefresh(!autoRefresh)}
+                >
+                  {autoRefresh ? '暂停刷新' : '自动刷新'}
+                </Button>
+                <Button
+                  type="text"
+                  icon={<ReloadOutlined />}
+                  onClick={handleManualRefresh}
+                />
                 <Checkbox
                   checked={logFilters.INFO}
                   onChange={() => handleLogFilterChange('INFO')}
@@ -282,7 +345,7 @@ function TaskDetail() {
             }
           >
             <div className="task-logs">
-              {getFilteredLogs().map((log, index) => (
+              {filteredLogs.map((log, index) => (
                 <div key={index} className="log-entry">
                   <Text type="secondary" style={{ marginRight: 8 }}>
                     {dayjs(log.timestamp).format('YYYY-MM-DD HH:mm:ss')}

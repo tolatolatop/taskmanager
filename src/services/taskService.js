@@ -70,7 +70,20 @@ const RealTaskAPI = {
 
     searchTasks: async (query) => {
         return await request(`/tasks/search?q=${encodeURIComponent(query)}`);
-    }
+    },
+
+    fetchTaskLogs: async (taskId) => {
+        try {
+            const response = await fetch(`${BASE_URL}/tasks/${taskId}/logs`);
+            if (!response.ok) {
+                throw new Error('获取日志失败');
+            }
+            return await response.json();
+        } catch (error) {
+            console.error('获取任务日志请求失败:', error);
+            throw error;
+        }
+    },
 };
 
 // 导出API（根据USE_MOCK切换）
@@ -120,4 +133,19 @@ export const TaskModel = {
         createdAt: task.createdAt || new Date().toISOString(),
         completedAt: task.completedAt || null
     })
+};
+
+// 添加获取日志的方法
+export const fetchTaskLogs = async (taskId) => {
+    try {
+        const response = await fetch(`${BASE_URL}/tasks/${taskId}/logs`);
+        if (!response.ok) {
+            throw new Error('Failed to fetch logs');
+        }
+        const data = await response.json();
+        return data.logs;
+    } catch (error) {
+        console.error('Error fetching logs:', error);
+        throw error;
+    }
 }; 

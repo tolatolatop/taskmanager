@@ -64,9 +64,9 @@ const mockInstances = [
     },
     {
         id: 2,
-        name: '生产环境-2',
+        name: '生环境-2',
         ip: '192.168.1.102',
-        region: '华东-上海',
+        region: '华-上海',
         status: 'running',
         specification: '8C16G',
         cpuType: 'Intel Xeon Platinum 8269CY',
@@ -164,7 +164,7 @@ const mockInstances = [
     },
     {
         id: 12,
-        name: '数据分析环境-2',
+        name: '数据分析境-2',
         ip: '192.168.7.102',
         region: '华北-北京',
         status: 'running',
@@ -309,6 +309,112 @@ const mockTasks = [
 // 模拟延迟
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
+// 添加一个对象来存储每个任务的日志
+const taskLogsCache = new Map();
+
+// 生成初始日志
+const generateInitialLogs = (taskId, task) => {
+    const logs = [];
+    const startTime = new Date(task.createdAt);
+
+    // 添加任务创建日志
+    logs.push({
+        timestamp: startTime.toISOString(),
+        message: `[INFO] Task-${taskId} - 任务已创建: ${task.title}`
+    });
+
+    // 根据任务状态添加相应的日志
+    switch (task.status) {
+        case '已完成':
+            logs.push({
+                timestamp: task.completedAt,
+                message: `[INFO] Task-${taskId} - 任务已完成，总耗时: ${Math.round((new Date(task.completedAt) - startTime) / 1000 / 60)
+                    } 分钟`
+            });
+            break;
+        case '失败':
+            logs.push({
+                timestamp: task.completedAt || new Date().toISOString(),
+                message: `[ERROR] Task-${taskId} - 任务执行失败，请检查系统日志`
+            });
+            break;
+        case '待处理':
+            logs.push({
+                timestamp: startTime.toISOString(),
+                message: `[INFO] Task-${taskId} - 任务等待处理中`
+            });
+            break;
+    }
+
+    return logs;
+};
+
+// 生成运行中的日志
+const generateRunningLogs = (taskId, existingLogs = []) => {
+    const currentTime = new Date().toISOString();
+    const progress = Math.floor(Math.random() * 100);
+
+    const newLogs = [
+        {
+            timestamp: currentTime,
+            message: `[INFO] Task-${taskId} - 任务正在运行中，当前进度: ${progress}%`
+        }
+    ];
+
+    // 随机添加系统状态日志
+    if (Math.random() > 0.7) {
+        const memoryUsage = Math.floor(Math.random() * 60 + 20);
+        const cpuUsage = Math.floor(Math.random() * 50 + 10);
+
+        if (memoryUsage > 80 || cpuUsage > 80) {
+            newLogs.push({
+                timestamp: currentTime,
+                message: `[WARN] Task-${taskId} - 系统资源使用率较高 (内存: ${memoryUsage}%, CPU: ${cpuUsage}%)`
+            });
+        } else {
+            newLogs.push({
+                timestamp: currentTime,
+                message: `[DEBUG] Task-${taskId} - 系统状态正常 (内存: ${memoryUsage}%, CPU: ${cpuUsage}%)`
+            });
+        }
+    }
+
+    // 合并现有日志和新日志，并限制为最新的100条
+    return [...existingLogs, ...newLogs].slice(-100);
+};
+
+// 添加模拟日志数据生成函数
+const generateNewLogs = (existingLogs = []) => {
+    const logTypes = ['INFO', 'DEBUG', 'WARN', 'ERROR'];
+    const logMessages = [
+        '系统正在运行',
+        '检查配置文件',
+        '发现潜在问题',
+        '执行失败'
+    ];
+
+    const randomLog = {
+        timestamp: new Date().toISOString(),
+        message: `[${logTypes[Math.floor(Math.random() * logTypes.length)]}] ${logMessages[Math.floor(Math.random() * logMessages.length)]
+            }`
+    };
+
+    return [...existingLogs, randomLog].slice(-100); // 保持最新的100条日志
+};
+
+// 添加模拟获取日志的接口
+export const mockFetchTaskLogs = async (taskId) => {
+    const task = mockTasks.find(t => t.id === taskId);
+    if (!task) {
+        throw new Error('Task not found');
+    }
+
+    // 模拟新增一些日志
+    task.logs = generateNewLogs(task.logs);
+
+    return task.logs;
+};
+
 // 模拟服务
 export const MockTaskAPI = {
     getTasks: async () => {
@@ -390,7 +496,33 @@ export const MockTaskAPI = {
             status: instance.status,
             lastHeartbeat: instance.lastHeartbeat
         };
-    }
+    },
+
+    fetchTaskLogs: async (taskId) => {
+        await new Promise(resolve => setTimeout(resolve, 300));
+
+        const task = mockTasks.find(t => t.id === parseInt(taskId));
+        if (!task) {
+            throw new Error('Task not found');
+        }
+
+        // 如果缓存中没有该任务的日志，生成初始日志
+        if (!taskLogsCache.has(taskId)) {
+            const initialLogs = generateInitialLogs(taskId, task);
+            taskLogsCache.set(taskId, initialLogs);
+        }
+
+        // 获取当前缓存的日志
+        let logs = taskLogsCache.get(taskId);
+
+        // 如果任务正在进行中，生成新的运行日志
+        if (task.status === '进行中') {
+            logs = generateRunningLogs(taskId, logs);
+            taskLogsCache.set(taskId, logs);
+        }
+
+        return logs;
+    },
 };
 
 // 导出实例数据和状态枚举

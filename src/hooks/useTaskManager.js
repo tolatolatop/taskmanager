@@ -87,6 +87,16 @@ export const useTaskManager = () => {
         }
     }, []);
 
+    const fetchTaskLogs = async (taskId) => {
+        try {
+            return await TaskAPI.fetchTaskLogs(taskId);
+        } catch (error) {
+            console.log('获取任务日志失败:', error);
+            message.error('获取日志失败');
+            return [];
+        }
+    };
+
     return {
         tasks,
         loading,
@@ -95,6 +105,7 @@ export const useTaskManager = () => {
         addTask,
         updateTask,
         deleteTask,
-        searchTasks
+        searchTasks,
+        fetchTaskLogs,
     };
 }; 
